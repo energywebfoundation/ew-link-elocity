@@ -9,78 +9,56 @@ FACTORY = MemoryDAOFactory()
 
 
 @dataclass
-class Request:
-    msg_type: int
-    msg_id: str
-    typ: str
-    body: dict
-
-    def serialize(self):
-        msg = [self.msg_type, self.msg_id, self.typ, self.body]
-        return msg
-
-
-@dataclass
-class Response:
-    msg_type: int
-    msg_id: str
-    body: dict
-    req: Request = None
-
-    def serialize(self):
-        msg = [self.msg_type, self.msg_id, self.body]
-        return msg
-
-
-@dataclass
-class OcppChargingStation(Model):
-    host: str
-    port: int
-    serial_number: str = None
-    metadata: str = None
+class Ocpp16:
+    transactions: dict = field(default_factory=dict)
     req_queue: dict = field(default_factory=dict)
     res_queue: dict = field(default_factory=dict)
-    connectors: dict = field(default_factory=dict)
-    transactions: dict = field(default_factory=dict)
-    tags: [str] = field(default_factory=list)  # TODO: Use eth address as tag id
-    last_heartbeat: dict = None
-    reg_id = f'{host}:{port}'
+
+    @dataclass
+    class Request:
+        msg_type: int
+        msg_id: str
+        typ: str
+        body: dict
+
+        def serialize(self):
+            msg = [self.msg_type, self.msg_id, self.typ, self.body]
+            return msg
+
+    @dataclass
+    class Response:
+        msg_type: int
+        msg_id: str
+        body: dict
+        req: OcppProtocol16.Request = None
+
+        def serialize(self):
+            msg = [self.msg_type, self.msg_id, self.body]
+            return msg
+
+    @dataclass
+    class Tag:
+        tag_id: str
+        expiry_date: datetime.datetime
 
     def _answer(self, req: Request, body: dict):
-        self.res_queue[req.msg_id] = Response(req.msg_id, body)
+        self.res_queue[req.msg_id] = Ocpp16.Response(req.msg_id, body)
 
     def _ask(self, verb: object, body: object):
         msg_id = str(uuid.uuid4())
-        self.req_queue[msg_id] = Request(msg_id, verb, body)
+        self.req_queue[msg_id] = Ocpp16.Request(msg_id, verb, body)
 
-    def _add_connector(self, number: int, last_status: str, meter_read=None, meter_unit=None):
-        @dataclass
-        class Connector:
-            connector_id: int
-            last_status: str
-            meter_read: str
-            meter_unit: str
+    def unlock_connector(self, connector_id):
+        self._ask('UnlockConnector', {'connectorId': connector_id})
 
-        if number not in self.connectors:
-            self.connectors[number] = Connector(number, last_status, meter_read, meter_unit)
-        else:
-            connector = self.connectors[number]
-            connector.last_status = last_status
-            if meter_read:
-                connector.meter_read = meter_read
-                connector.meter_unit = meter_unit
-        return self.connectors[number]
+    def start_transaction(self, tag_id: str):
+        self._ask('RemoteStartTransaction', {'connectorId': 1, 'idTag': tag_id})
 
-    def _add_tag(self, tag_id, expiry_date: datetime.datetime = None):
-        @dataclass
-        class Tag:
-            tag_id: str
-            expiry_date: datetime.datetime
+    def stop_transaction(self, tx_id: int):
+        self._ask('RemoteStopTransaction', {'transactionId': tx_id})
 
-        if not expiry_date:
-            expiry_date = datetime.datetime.utcnow() + datetime.timedelta(days=360)
-        self.tags[tag_id] = Tag(tag_id, expiry_date)
-        return self.tags[tag_id]
+    def request_meter_values(self):
+        self._ask('TriggerMessage', {'requestedMessage': 'MeterValues'})
 
     def _begin_transaction(self, conn_id: int, tag_id: str, timestamp: str, meter_start: int):
         @dataclass
@@ -105,51 +83,43 @@ class OcppChargingStation(Model):
         tx.meter_stop = meter_stop
         return self.transactions[tx_id]
 
-    def unlock_connector(self, connector_id):
-        self._ask('UnlockConnector', {'connectorId': connector_id})
+    def _handle_charging_station(self, serial_number: str, metadata: str):
+        raise NotImplementedError
 
-    def start_transaction(self, tag_id: str):
-        self._ask('RemoteStartTransaction', {'connectorId': 1, 'idTag': tag_id})
+    def _handle_connector(self, number: int, last_status: str, meter_read=None, meter_unit=None, metadata=None):
+        raise NotImplementedError
 
-    def stop_transaction(self, tx_id: int):
-        self._ask('RemoteStopTransaction', {'transactionId': tx_id})
+    def _authorize_tag(self, tag_id, expiry_date: datetime.datetime = None) -> Tag:
+        raise NotImplementedError
 
-    def request_meter_values(self):
-        self._ask('TriggerMessage', {'requestedMessage': 'MeterValues'})
+    def _handle_wrong_answer(self, res: Response):
+        raise NotImplementedError
 
     @staticmethod
-    def follow_protocol(self, message: Request or Response):
+    def handle_protocol(self, message: Request or Response):
 
-        def check_right_answer(res: Response, status: str):
-            if res.body['status'] != status:
-                return
-            else:
-                print(f'Request {res.serialize()} failed')
-                raise Exception('Request failed, please check Charging Station.')
-
-        if isinstance(message, Response):
+        if isinstance(message, Ocpp16.Response):
             response = message
             if response.req.typ in ('UnlockConnector', 'RemoteStartTransaction', 'RemoteStopTransaction',
                                     'TriggerMessage'):
-                check_right_answer(response, 'Accepted')
+                if response.body['status'] != 'Accepted':
+                    self._handle_wrong_answer(response)
                 return
 
-        elif isinstance(message, Request):
+        elif isinstance(message, Ocpp16.Request):
 
             request = message
             if request.typ == 'Heartbeat':
                 self._answer(request, {'currentTime': datetime.datetime.utcnow().isoformat()})
                 return
             if request.typ == 'BootNotification':
-                self.metadata = request.body
-                self.serial_number = request.body['chargePointSerialNumber']
-                self._answer(request, {'status': 'Accepted',
-                                      'currentTime': datetime.datetime.utcnow().isoformat(),
+                self._handle_charging_station(request.body['chargePointSerialNumber'], metadata=request.body)
+                self._answer(request, {'status': 'Accepted', 'currentTime': datetime.datetime.utcnow().isoformat(),
                                       'interval': 14400})
                 return
             if request.typ == 'Authorize':
-                if request.body['idTag'] in self.tags:
-                    tag = self.tags[request.body['idTag']]
+                tag = self._authorize_tag(request.body['idTag'])
+                if tag:
                     self._answer(request,
                                  {'idTagInfo': {'status': 'Accepted', 'expiryDate': tag.expiry_date.isoformat()}})
                 else:
@@ -157,45 +127,92 @@ class OcppChargingStation(Model):
                 return
             if request.typ == 'StatusNotification':
                 self._answer(request, {})
-                self._add_connector(number=request.body['connectorId'], last_status=request.body['info'])
+                self._handle_connector(number=request.body['connectorId'], last_status=request.body['info'])
                 return
             if request.typ == 'MeterValues':
                 self._answer(request, {})
                 for value in request.body['meterValue']:
                     for sample in value['sampledValue']:
-                        meter_read = sample['value']
-                        meter_unit = sample['unit']
-                        self._add_connector(number=request.body['connectorId'], last_status=request.body['info'],
-                                            meter_read=meter_read, meter_unit=meter_unit)
+                        self._handle_connector(number=request.body['connectorId'], last_status=request.body['info'],
+                                               meter_read=sample['value'], meter_unit=sample['unit'])
                         break
                     break
                 return
             if request.typ == 'StartTransaction':
                 tx = self._begin_transaction(conn_id=request.body['connectorId'], timestamp=request.body['timestamp'],
                                              meter_start=request.body['meterStart'], tag_id=request.body['idTag'])
-                tag = self.tags[request.body['idTag']]
-                self._answer(request, {"transactionId": tx.tx_id,
-                                      "idTagInfo": {"status": "Accepted", "expiryDate": tag.expiry_date}})
+                tag = self._authorize_tag(request.body['idTag'])
+                if tag:
+                    self._answer(request, {"transactionId": tx.tx_id,
+                                       "idTagInfo": {"status": "Accepted", "expiryDate": tag.expiry_date}})
+                else:
+                    self._answer(request, {"transactionId": tx.tx_id, "idTagInfo": {"status": "Rejected"}})
+
                 return
             if request.typ == 'StopTransaction':
                 tx = self._end_transaction(tx_id=request.body['transactionId'], timestamp=request.body['timestamp'],
                                            meter_stop=request.body['meterStop'])
 
 
-stateful_cs = FACTORY.get_instance(OcppChargingStation)
+@dataclass
+class ChargingStation(Model, Ocpp16):
+    host: str
+    port: int
+    serial_number: str = None
+    metadata: str = None
+    connectors: dict = field(default_factory=dict)
+    tags: [str] = field(default_factory=list)  # TODO: Use eth address as tag id
+    last_heartbeat: dict = None
+    reg_id = f'{host}:{port}'
+
+    @dataclass
+    class Connector:
+        connector_id: int
+        last_status: str
+        meter_read: str
+        meter_unit: str
+        metadata: str
+
+    def _handle_charging_station(self, serial_number: str, metadata: str):
+        self.serial_number = serial_number
+        self.metadata = metadata
+
+    def _handle_connector(self, number: int, last_status: str, meter_read=None, meter_unit=None, metadata=None):
+        if number not in self.connectors:
+            self.connectors[number] = ChargingStation.Connector(number, last_status, meter_read, meter_unit, metadata)
+        else:
+            connector = self.connectors[number]
+            connector.last_status = last_status
+            if meter_read:
+                connector.meter_read = meter_read
+                connector.meter_unit = meter_unit
+        return self.connectors[number]
+
+    def _authorize_tag(self, tag_id, expiry_date: datetime.datetime = None):
+        if tag_id not in self.tags:
+            if not expiry_date:
+                expiry_date = datetime.datetime.utcnow() + datetime.timedelta(days=360)
+            self.tags[tag_id] = ChargingStation.Tag(tag_id, expiry_date)
+        return self.tags[tag_id]
+
+    def _handle_wrong_answer(self, res: Ocpp16.Response):
+        print(f'Request {res.serialize()} rejected')
 
 
-def dispatcher(cs: OcppChargingStation, incoming: Request or Response):
+stateful_cs = FACTORY.get_instance(ChargingStation)
+
+
+def dispatcher(cs: ChargingStation, incoming: Ocpp16.Request or Ocpp16.Response):
     cs = stateful_cs.persist(cs)
-    if isinstance(incoming, Response):
+    if isinstance(incoming, Ocpp16.Response):
         if incoming.msg_id not in cs.req_queue:
             raise ConnectionError('Out-of-sync: Response for an unsent message.')
         incoming.req = cs.req_queue[incoming.msg_id]
-    cs.follow_protocol(message=incoming)
+    cs.handle_protocol(message=incoming)
     stateful_cs.update(cs)
 
 
-def aggregator() -> [Request or Response]:
+def aggregator() -> [Ocpp16.Request or Ocpp16.Response]:
     requests, responses = [], []
     requests = [requests + cs.req_queue for cs in stateful_cs.retrieve_all()]
     responses = [responses + cs.res_queue for cs in stateful_cs.retrieve_all()]
