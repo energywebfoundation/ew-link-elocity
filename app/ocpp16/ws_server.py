@@ -4,7 +4,7 @@ import pprint
 
 import websockets
 
-from app.ocpp16.protocol import aggregator, dispatcher, Response, Request, ChargingStation
+from app.ocpp16.protocol import aggregator, dispatcher, ChargingStation, Ocpp16
 
 IP = '192.168.123.220'
 PORT = 8080
@@ -12,7 +12,7 @@ PORT = 8080
 
 async def ocpp_router(websocket, path):
 
-    def console_log(msg: Request or Response, direction: str):
+    def console_log(msg: Ocpp16.Request or Ocpp16.Response, direction: str):
         pp = pprint.PrettyPrinter(indent=4)
         print(f"{direction} {pp.pformat(msg.serialize())}\n")
 
@@ -26,7 +26,7 @@ async def ocpp_router(websocket, path):
     if len(packet) < 1 or packet[0] not in (2, 3):
         print(f'<< UNKNOWN PACKET {packet}')
         return None
-    incoming = Request(*packet) if packet[0] == 2 else Response(*packet)
+    incoming = Ocpp16.Request(*packet) if packet[0] == 2 else Ocpp16.Response(*packet)
     console_log(incoming, '<<')
     cs = ChargingStation(*websocket.remote_address())  # remote_address returns host, port
     dispatcher(cs=cs, incoming=incoming)
