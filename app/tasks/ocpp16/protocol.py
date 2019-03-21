@@ -3,9 +3,7 @@ import datetime
 import uuid
 from dataclasses import dataclass, field
 
-from app.ocpp16.memorydao import MemoryDAOFactory, Model
-
-FACTORY = MemoryDAOFactory()
+from app.tasks.ocpp16.memorydao import Model
 
 
 @dataclass
@@ -20,6 +18,7 @@ class Ocpp16:
         msg_id: str
         typ: str
         body: dict
+        is_pending: bool = True
 
         def serialize(self):
             msg = [self.msg_type, self.msg_id, self.typ, self.body]
@@ -30,7 +29,8 @@ class Ocpp16:
         msg_type: int
         msg_id: str
         body: dict
-        req: OcppProtocol16.Request = None
+        is_pending: bool = True
+        req: object = None
 
         def serialize(self):
             msg = [self.msg_type, self.msg_id, self.body]
@@ -98,13 +98,20 @@ class Ocpp16:
     @staticmethod
     def handle_protocol(self, message: Request or Response):
 
+        def remove_msg(res: Ocpp16.Response):
+            del self.req_queue[res.req.msg_id]
+            del self.res_queue[res.msg_id]
+
         if isinstance(message, Ocpp16.Response):
             response = message
-            if response.req.typ in ('UnlockConnector', 'RemoteStartTransaction', 'RemoteStopTransaction',
-                                    'TriggerMessage'):
+            if response.req.typ in ('RemoteStartTransaction', 'RemoteStopTransaction','TriggerMessage'):
                 if response.body['status'] != 'Accepted':
                     self._handle_wrong_answer(response)
-                return
+            elif response.req.typ == 'UnlockConnector':
+                if response.body['status'] != 'Unlocked':
+                    self._handle_wrong_answer(response)
+            remove_msg(response)
+            return
 
         elif isinstance(message, Ocpp16.Request):
 
@@ -162,8 +169,11 @@ class ChargingStation(Model, Ocpp16):
     metadata: str = None
     connectors: dict = field(default_factory=dict)
     tags: [str] = field(default_factory=list)  # TODO: Use eth address as tag id
-    last_heartbeat: dict = None
-    reg_id = f'{host}:{port}'
+    last_heartbeat: dict = field(default_factory=dict)
+
+    @property
+    def reg_id(self) -> str:
+        return f'{self.host}:{self.port}'
 
     @dataclass
     class Connector:
@@ -197,23 +207,3 @@ class ChargingStation(Model, Ocpp16):
 
     def _handle_wrong_answer(self, res: Ocpp16.Response):
         print(f'Request {res.serialize()} rejected')
-
-
-stateful_cs = FACTORY.get_instance(ChargingStation)
-
-
-def dispatcher(cs: ChargingStation, incoming: Ocpp16.Request or Ocpp16.Response):
-    cs = stateful_cs.persist(cs)
-    if isinstance(incoming, Ocpp16.Response):
-        if incoming.msg_id not in cs.req_queue:
-            raise ConnectionError('Out-of-sync: Response for an unsent message.')
-        incoming.req = cs.req_queue[incoming.msg_id]
-    cs.handle_protocol(message=incoming)
-    stateful_cs.update(cs)
-
-
-def aggregator() -> [Ocpp16.Request or Ocpp16.Response]:
-    requests, responses = [], []
-    requests = [requests + cs.req_queue for cs in stateful_cs.retrieve_all()]
-    responses = [responses + cs.res_queue for cs in stateful_cs.retrieve_all()]
-    return responses + requests

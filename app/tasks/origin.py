@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import datetime
-import json
 import time
-import urllib
 
 import energyweb
 
@@ -157,54 +155,3 @@ class CooConsumerTask(CooGeneralTask):
         }
         return energyweb.ConsumedEnergy(**consumed)
 
-
-class NetworkTask(energyweb.Task):
-    """
-    Example Task reading and writing network
-    """
-    def prepare(self):
-        print('Net try open')
-        return super().prepare()
-
-    def main(self, number):
-        try:
-            net = urllib.request.urlopen(f'http://localhost:8000/{number}')
-        except urllib.error.URLError:
-            print('Net unavailable')
-            return True
-
-        response = net.read().decode().strip()
-        if response == 'ja':
-            print('Here we go', end='')
-            for _ in range(3):
-                print('.', end='', flush=True)
-                time.sleep(1)
-            print('')
-        elif response == 'stop':
-            return False
-        return True
-
-    def finish(self):
-        print('Net close')
-        return super().finish()
-
-
-class MyApp(energyweb.dispatcher.App):
-
-    def configure(self):
-        try:
-            app_configuration_file = json.load(open('config.json'))
-            app_config = energyweb.config.parse_coo_v1(app_configuration_file)
-            interval = datetime.timedelta(seconds=3)
-            for producer in app_config.production:
-                self.add_task(CooProducerTask(task_config=producer, polling_interval=interval, store='/tmp/origin/produce'))
-            for consumer in app_config.consumption:
-                self.add_task(CooConsumerTask(task_config=consumer, polling_interval=interval, store='/tmp/origin/consume'))
-        except energyweb.config.ConfigurationFileError as e:
-            print(f'Error in configuration file: {e}')
-        except Exception as e:
-            print(f'Fatal error: {e}')
-
-
-if __name__ == '__main__':
-    MyApp().run()
