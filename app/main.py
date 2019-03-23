@@ -7,6 +7,8 @@ from app.tasks.origin import CooProducerTask, CooConsumerTask
 from app.tasks.ev_charger import EvChargingStationControlTask
 
 
+
+
 class MyApp(energyweb.dispatcher.App):
 
     def configure(self):

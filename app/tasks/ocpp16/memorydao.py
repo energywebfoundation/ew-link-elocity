@@ -37,44 +37,42 @@ class MemoryDAO:
     """
 
     def __init__(self):
-        self.__stack = {}
-        self.__index = [i for i in reversed(range(1, 999999))]
+        self._stack = {}
 
     def cls(self, obj):
         return obj.__class__.__name__
 
     def create(self, obj):
-        if obj.reg_id:
+        if obj.reg_id in self._stack:
             raise FileExistsError
-        obj.reg_id = self.__index.pop()
-        self.__stack[obj.reg_id] = deepcopy(obj)
+        self._stack[obj.reg_id] = deepcopy(obj)
 
     def retrieve(self, reg_id):
-        if reg_id not in self.__stack.keys():
+        if reg_id not in self._stack:
             raise FileNotFoundError
-        obj = self.__stack[reg_id]
+        obj = self._stack[reg_id]
         return deepcopy(obj)
 
     def retrieve_all(self):
-        return [deepcopy(self.__stack[i]) for i in self.__stack]
+        return [deepcopy(self._stack[i]) for i in self._stack]
 
     def update(self, obj):
-        if obj.reg_id in self.__stack.keys():
-            self.__stack[obj.reg_id] = deepcopy(obj)
+        if obj.reg_id in self._stack:
+            self._stack[obj.reg_id] = deepcopy(obj)
         else:
             raise FileNotFoundError
 
     def delete(self, obj):
-        del self.__stack[obj.reg_id]
+        del self._stack[obj.reg_id]
 
     def find_by(self, attributes):
         assert isinstance(attributes, dict)
         result = []
-        if len(self.__stack) == 0:
+        if len(self._stack) == 0:
             return result
-        sample = list(self.__stack.items())[0][1]
+        sample = list(self._stack.items())[0][1]
         intersect_keys = set(attributes).intersection(set(sample.__dict__))
-        for k, reg in self.__stack.items():
+        for k, reg in self._stack.items():
             for key in intersect_keys:
                 stack_item = reg.__dict__
                 if stack_item[key] == attributes[key]:
@@ -82,10 +80,10 @@ class MemoryDAO:
         return result
 
     def persist(self, obj):
-        if obj.reg_id not in self.__stack.keys():
+        if obj.reg_id not in self._stack:
             self.create(obj)
         else:
-            obj = self.__stack[obj.reg_id]
+            obj = self._stack[obj.reg_id]
         return deepcopy(obj)
 
 

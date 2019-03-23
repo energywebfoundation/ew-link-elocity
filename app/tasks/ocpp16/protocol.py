@@ -42,11 +42,11 @@ class Ocpp16:
         expiry_date: datetime.datetime
 
     def _answer(self, req: Request, body: dict):
-        self.res_queue[req.msg_id] = Ocpp16.Response(req.msg_id, body)
+        self.res_queue[req.msg_id] = Ocpp16.Response(3, req.msg_id, body)
 
-    def _ask(self, verb: object, body: object):
+    def _ask(self, typ: object, body: object):
         msg_id = str(uuid.uuid4())
-        self.req_queue[msg_id] = Ocpp16.Request(msg_id, verb, body)
+        self.req_queue[msg_id] = Ocpp16.Request(2, msg_id, typ, body)
 
     def unlock_connector(self, connector_id):
         self._ask('UnlockConnector', {'connectorId': connector_id})
@@ -95,7 +95,6 @@ class Ocpp16:
     def _handle_wrong_answer(self, res: Response):
         raise NotImplementedError
 
-    @staticmethod
     def handle_protocol(self, message: Request or Response):
 
         def remove_msg(res: Ocpp16.Response):
@@ -161,19 +160,18 @@ class Ocpp16:
                                            meter_stop=request.body['meterStop'])
 
 
-@dataclass
 class ChargingStation(Model, Ocpp16):
-    host: str
-    port: int
-    serial_number: str = None
-    metadata: str = None
-    connectors: dict = field(default_factory=dict)
-    tags: [str] = field(default_factory=list)  # TODO: Use eth address as tag id
-    last_heartbeat: dict = field(default_factory=dict)
 
-    @property
-    def reg_id(self) -> str:
-        return f'{self.host}:{self.port}'
+    def __init__(self, host: str, port: int):
+        self.host: str = host
+        self.port: int = port
+        self.serial_number: str = None
+        self.metadata: str = None
+        self.connectors: dict = {}
+        self.tags: [str] = []
+        self.last_heartbeat: dict = {}
+        Model.__init__(self, reg_id=f'{host}:{port}')
+        Ocpp16.__init__(self)
 
     @dataclass
     class Connector:
