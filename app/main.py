@@ -3,10 +3,8 @@ import json
 
 import energyweb
 
-from app.tasks.origin import CooProducerTask, CooConsumerTask
-from app.tasks.ev_charger import EvChargingStationControlTask
-
-
+from tasks.origin import CooProducerTask, CooConsumerTask
+from tasks.ev_charger import EvChargingStationControlTask
 
 
 class MyApp(energyweb.dispatcher.App):

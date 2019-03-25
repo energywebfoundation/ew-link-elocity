@@ -2,7 +2,7 @@ import datetime
 
 import energyweb
 
-from app.tasks.ocpp16.ws_server import server
+from tasks.ocpp16.ws_server import server
 
 
 class EvChargingStationControlTask(energyweb.Task):

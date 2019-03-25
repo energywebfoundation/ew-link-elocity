@@ -4,11 +4,11 @@ import pprint
 
 import websockets
 
-from app.tasks.ocpp16.memorydao import MemoryDAOFactory
-from app.tasks.ocpp16.protocol import ChargingStation, Ocpp16
+from tasks.ocpp16.memorydao import MemoryDAOFactory
+from tasks.ocpp16.protocol import ChargingStation, Ocpp16
 
-IP = 'localhost'
-# IP = '192.168.123.220'
+# IP = 'localhost'
+IP = '192.168.123.220'
 PORT = 8080
 FACTORY = MemoryDAOFactory()
 
@@ -55,6 +55,8 @@ async def incoming(websocket, path):
         await dispatcher(cs=cs, incoming=msg)
     except Exception as e:
         pass
+    if not websocket.closed:
+        await asyncio.ensure_future(incoming(websocket, path))
 
 
 async def outcoming(websocket, path):
@@ -85,7 +87,6 @@ async def outcoming(websocket, path):
             [add_to_queue(req, cs) for req in cs.req_queue.values() if req.is_pending]
             [add_to_queue(res, cs) for res in cs.res_queue.values() if res.is_pending]
         return queue
-
     #   - Send Messages from all charging stations queues
     try:
         for msg in aggregator():
@@ -94,13 +95,15 @@ async def outcoming(websocket, path):
             print(f">> {pp.pformat(msg.serialize())}\n")
     except Exception as e:
         pass
-
+    if not websocket.closed:
+        await asyncio.ensure_future(outcoming(websocket, path))
 
 connected = set()
 
 
 async def router(websocket, path):
     connected.add(websocket)
+    # TODO: Fix multiple connections by creating a function here to add new listeners.
     while True:
         try:
             tasks = []
@@ -112,25 +115,46 @@ async def router(websocket, path):
                     connected.remove(ws)
                     host, port = ws.remote_address[0], ws.remote_address[1]
                     print(f'Client {host}:{port} disconnected.')
-                    # TODO: Log disconnections
+                    break
             if len(tasks) > 1:
-                await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+                [task.cancel() for task in pending]
             else:
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
         except Exception as e:
             print('Client disconnected abruptly.')
 
 
 async def command():
+    # import code
+    # global message_bus
+    #
+    # def get_cs_ids():
+    #     return message_bus['ev_charger_available'].get_nowait()
+    #
+    # async def unlock(cs_id: str):
+    #     await message_bus['ev_charger_command'].put((cs_id, 'unlock_connector', {'connector_id': 1}))
+    #
+    # async def start(cs_id: str):
+    #     await message_bus['ev_charger_command'].put((cs_id, 'start_transaction', {'tag_id': 1}))
+    #
+    # async def stop(cs_id: str):
+    #     await message_bus['ev_charger_command'].put((cs_id, 'stop_transaction', {'tx_id': 1}))
+    #
+    # code.interact(local=dict(globals(), **locals()))
 
-    print('start')
-    await asyncio.sleep(20)
-    print('wake')
+    await asyncio.sleep(120)
+    print('----- commands woke up -----')
     cs_ids = {}
     global message_bus
     while not message_bus['ev_charger_available'].empty():
         cs_ids = message_bus['ev_charger_available'].get_nowait()
-    [await message_bus['ev_charger_command'].put((cs_id, 'unlock_connector', {'connector_id': 1})) for cs_id in cs_ids]
+    for cs_id in cs_ids:
+        await message_bus['ev_charger_command'].put((cs_id, 'unlock_connector', {'connector_id': 1}))
+        await asyncio.sleep(60)
+        await message_bus['ev_charger_command'].put((cs_id, 'start_transaction', {'tag_id': 1}))
+        await asyncio.sleep(120)
+        await message_bus['ev_charger_command'].put((cs_id, 'stop_transaction', {'tx_id': 1}))
     print('---- end -----')
 
 
