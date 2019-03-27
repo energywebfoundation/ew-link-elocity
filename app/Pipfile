@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 energyweb = "*"
 websockets = "*"
+elasticsearch = "*"
 
 [requires]
 python_version = "3.7"
