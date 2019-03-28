@@ -117,7 +117,7 @@ class Ocpp16:
         """
         raise NotImplementedError
 
-    def handle_protocol(self, message: Request or Response):
+    def follow_protocol(self, message: Request or Response):
 
         def remove_msg(res: Ocpp16.Response):
             del self.req_queue[res.req.msg_id]
