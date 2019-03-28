@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from elasticsearch import Elasticsearch
-es = Elasticsearch('http://10.10.1.162:9200')
+es = Elasticsearch('http://127.0.0.1:9200')
 
 
 def write():
@@ -43,8 +43,9 @@ def write():
         'metadata': 'I\'m a better station',
         'connectors': connectors
     }
-    res = es.index(index="asset", doc_type='chargingstation', id=1, body=doc)
+    res = es.index(index="asset", doc_type='chargingstation', id=2, body=doc)
     print(res['result'])
+    refresh()
 
 def read():
     res = es.get(index="asset", doc_type='chargingstation', id=1)
@@ -59,4 +60,6 @@ def search():
     for hit in res['hits']['hits']:
         print("%(serial_number)s: %(metadata)s %(connectors)s" % hit["_source"])
 
+write()
+refresh()
 search()
