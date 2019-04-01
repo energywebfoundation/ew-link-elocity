@@ -6,8 +6,9 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-energyweb = "*"
-websockets = "*"
+energyweb = "==0.4.0"
+websockets = ">=6.0"
+web3 = ">=4.9.1"
 
 [requires]
 python_version = "3.7"

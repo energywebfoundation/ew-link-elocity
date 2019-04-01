@@ -7,9 +7,9 @@ import json
 
 import websockets
 
-IP = 'localhost'
+IP = '0.0.0.0'
 # IP = '192.168.123.220'
-PORT = 8080
+PORT = 80
 
 boot_notification = [2, '52325482', 'BootNotification',
                      {

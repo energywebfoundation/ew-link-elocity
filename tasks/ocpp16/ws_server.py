@@ -14,7 +14,7 @@ class Ocpp16Server:
         self._queue = queue
         self._factory = factory
 
-    def dispatcher(self, cs: ChargingStation, msg: Ocpp16.Request or Ocpp16.Response):
+    def _dispatcher(self, cs: ChargingStation, msg: Ocpp16.Request or Ocpp16.Response):
         """
         Manage state and dispatch incoming message to its designated Charging Station
         :param cs: ChargingStation
@@ -30,7 +30,7 @@ class Ocpp16Server:
         cs.follow_protocol(message=msg)
         cs_dao.update(cs)
 
-    def aggregator(self) -> [Ocpp16.Request or Ocpp16.Response]:
+    def _aggregator(self) -> [Ocpp16.Request or Ocpp16.Response]:
         """
         Aggregate outgoing messages from all charging stations
         :return: [Messages]
@@ -49,6 +49,13 @@ class Ocpp16Server:
             cs_dao.update(cs)
         return messages
 
+    def _message_handler(self, msg):
+        pp = pprint.PrettyPrinter(indent=4)
+        print(f">> {pp.pformat(msg.serialize())}\n")
+
+    def _error_handler(self, text, e):
+        print(f'{text}{e.with_traceback(e.__traceback__)}')
+
     def get_server_future(self, host: str, port: int):
 
         clients_connected = set()
@@ -57,15 +64,14 @@ class Ocpp16Server:
             """ Send Messages from all charging stations queues """
             await asyncio.sleep(2)
             try:
-                for msg in self.aggregator():
+                for msg in self._aggregator():
                     await websocket.send(json.dumps(msg.serialize()))
-                    pp = pprint.PrettyPrinter(indent=4)
-                    print(f">> {pp.pformat(msg.serialize())}\n")
+                    self._message_handler(msg)
 
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                print(f'Error in delegating outgoing messages: {e.with_traceback(e.__traceback__)}')
+                self._error_handler('Error in delegating outgoing messages: ', e)
 
         async def wait_command():
             """ check_command_messages """
@@ -88,24 +94,22 @@ class Ocpp16Server:
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                print(f'Error processing command messages: {e.with_traceback(e.__traceback__)}')
+                self._error_handler('Error processing command messages: ', e)
 
         async def incoming(websocket, path):
             """ Listen to new messages and dispatch them """
             try:
                 packet = json.loads(await websocket.recv())
                 if len(packet) < 1 or packet[0] not in (2, 3):
-                    print(f'<< UNKNOWN PACKET {packet}')
+                    self._error_handler(f'Malformed {packet}', AssertionError('Unknown message format'))
                     return None
 
                 msg = Ocpp16.Request(*packet) if packet[0] == 2 else Ocpp16.Response(*packet)
                 host, port = websocket.remote_address[0], websocket.remote_address[1]
                 cs = ChargingStation(host, port)
 
-                pp = pprint.PrettyPrinter(indent=4)
-                print(f"<< {cs.reg_id}:  {pp.pformat(msg.serialize())}\n")
-
-                self.dispatcher(cs=cs, msg=msg)
+                self._message_handler(msg)
+                self._dispatcher(cs=cs, msg=msg)
 
                 # notify_available_charging_stations
                 cs_dao = self._factory.get_instance(ChargingStation)
@@ -115,7 +119,7 @@ class Ocpp16Server:
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                print(f'Error in processing incoming messages: {e.with_traceback(e.__traceback__)}')
+                self._error_handler("Error in processing incoming messages: ", e)
 
         async def router(websocket, path):
             """ Route the messages to the different clients connected"""
@@ -142,7 +146,7 @@ class Ocpp16Server:
                         await asyncio.sleep(1)
                 except Exception as e:
                     host, port = websocket.remote_address[0], websocket.remote_address[1]
-                    print(f'Client {host}:{port} disconnected abruptly. {e.with_traceback(e.__traceback__)}')
+                    self._error_handler(f'Client {host}:{port} disconnected abruptly. ', e)
 
         # Returns a future
         return websockets.serve(ws_handler=router, host=host, port=port, subprotocols=['ocpp1.6'])
