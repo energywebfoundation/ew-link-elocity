@@ -124,7 +124,6 @@ class Ocpp16Server:
             while True:
                 try:
                     tasks = []
-                    # for ws in clients_connected:
                     if not websocket.closed:
                         tasks.append(asyncio.ensure_future(incoming(websocket, path)))
                         tasks.append(asyncio.ensure_future(wait_command()))
@@ -135,7 +134,6 @@ class Ocpp16Server:
                         print(f'Client {host}:{port} disconnected.')
                         break
                     if len(tasks) > 1:
-                        # await asyncio.gather(*tasks)
                         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
                         [task.cancel() for task in pending]
                     else:
