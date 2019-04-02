@@ -4,7 +4,8 @@ import pprint
 
 import websockets
 
-from tasks.ocpp16.memorydao import MemoryDAOFactory, DAOFactory
+from tasks.database.dao import DAOFactory
+from tasks.database.memorydao import MemoryDAOFactory
 from tasks.ocpp16.protocol import ChargingStation, Ocpp16
 
 
@@ -22,7 +23,7 @@ class Ocpp16Server:
         """
         # TODO: Search cs by serial_number and replace ID(host:port) with new address.
         cs_dao = self._factory.get_instance(ChargingStation)
-        cs = cs_dao.persist(cs)
+        cs = cs_dao.create(cs)
         if isinstance(msg, Ocpp16.Response):
             if msg.msg_id not in cs.req_queue:
                 raise ConnectionError('Out-of-sync: Response for an unsent message.')
@@ -139,7 +140,6 @@ class Ocpp16Server:
                         print(f'Client {host}:{port} disconnected.')
                         break
                     if len(tasks) > 1:
-                        # await asyncio.gather(*tasks)
                         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
                         [task.cancel() for task in pending]
                     else:

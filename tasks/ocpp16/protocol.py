@@ -3,7 +3,7 @@ import datetime
 import uuid
 from dataclasses import dataclass, field
 
-from tasks.ocpp16.memorydao import Model
+from tasks.database.dao import Model
 
 
 @dataclass
@@ -191,11 +191,10 @@ class ChargingStation(Model, Ocpp16):
     def __init__(self, host: str, port: int):
         self.host: str = host
         self.port: int = port
-        self.serial_number: str = None
-        self.metadata: str = None
+        self.metadata: str = ''
         self.connectors: dict = {}
         self.last_heartbeat: dict = {}
-        Model.__init__(self, reg_id=f'{host}:{port}')
+        Model.__init__(self)
         Ocpp16.__init__(self)
 
     @dataclass
@@ -205,6 +204,14 @@ class ChargingStation(Model, Ocpp16):
         meter_read: str
         meter_unit: str
         metadata: str
+
+    @property
+    def serial_number(self):
+        return self.reg_id
+
+    @serial_number.setter
+    def serial_number(self, sn):
+        self.reg_id = sn
 
     def _handle_charging_station(self, serial_number: str, metadata: str):
         self.serial_number = serial_number
@@ -230,3 +237,12 @@ class ChargingStation(Model, Ocpp16):
 
     def _handle_wrong_answer(self, res: Ocpp16.Response):
         print(f'Request {res.serialize()} rejected')
+
+    def to_dict(self):
+        dict_obj = super(Model, self).to_dict()
+        dict_obj['reg_id'] = self.reg_id
+        dict_obj['req_queue'] = None
+        dict_obj['res_queue'] = None
+        del dict_obj['req_queue']
+        del dict_obj['res_queue']
+        return dict_obj
