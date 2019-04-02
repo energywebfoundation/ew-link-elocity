@@ -2,6 +2,11 @@
 from copy import deepcopy
 
 
+class DAOFactory:
+    def get_instance(self, cls):
+        raise NotImplementedError
+
+
 class Model:
     """ MVC Concrete Model """
 
@@ -87,7 +92,7 @@ class MemoryDAO:
         return deepcopy(obj)
 
 
-class MemoryDAOFactory:
+class MemoryDAOFactory(DAOFactory):
 
     def __init__(self):
         self.__instances = {}

@@ -1,4 +1,0 @@
-version: '2'
-services:
-  origin-producer-consumer:
-    build: ./app

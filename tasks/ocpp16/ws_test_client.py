@@ -1,8 +1,15 @@
+"""
+Test client for ws_server.py with real collected data.
+"""
+
 import asyncio
 import json
 
 import websockets
-from tasks.ocpp16.ws_server import IP, PORT
+
+IP = '0.0.0.0'
+# IP = '192.168.123.220'
+PORT = 80
 
 boot_notification = [2, '52325482', 'BootNotification',
                      {
