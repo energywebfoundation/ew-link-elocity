@@ -23,15 +23,6 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
         energyweb.Logger.__init__(self, log_name=task_config.name, store=store, enable_debug=enable_debug)
         energyweb.Task.__init__(self, queue=queue, polling_interval=polling_interval, eager=False, run_forever=True)
 
-    def _log_configuration(self):
-        """
-        Outputs the logger configuration
-        """
-        message = '[CONFIG] name: %s - energy energy_meter: %s'
-        if self.store and self.enable_debug:
-            self.console.info('[CONFIG] path to logs: %s', self.store)
-        self.console.info(message, self.task_config.name, self.task_config.energy_meter.__class__.__name__)
-
     def _log_measured_energy(self):
         """
         Try to reach the energy_meter and logs the measured energy.
@@ -55,9 +46,10 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
             tx_receipt = self.task_config.smart_contract.mint(energy_data)
             block_number = str(tx_receipt['blockNumber'])
             self.console.debug(self.msg_success, energy_data.to_dict(), block_number)
+        except ConnectionError as e:
+            self.console.warning('Not minted, Smart-contract is unreachable.')
         except Exception as e:
             self._handle_exception(e)
-            self.console.warning('Smart-contract is unreachable.')
 
     def _transform(self, local_file_hash: str):
         """
@@ -83,7 +75,13 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
             return None, True
 
     async def _prepare(self):
-        self._log_configuration()
+        """
+        Outputs the logger configuration
+        """
+        message = '[CONFIG] name: %s - energy energy_meter: %s'
+        if self.store and self.enable_debug:
+            self.console.info('[CONFIG] path to logs: %s', self.store)
+        self.console.info(message, self.task_config.name, self.task_config.energy_meter.__class__.__name__)
 
     async def _main(self, duration: int = 3):
         self._log_measured_energy()

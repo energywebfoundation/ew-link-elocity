@@ -81,7 +81,8 @@ stop_transaction = [2, '107993865', 'StopTransaction',
                                  'unit': 'Wh',
                                  'value': '1704'
                                  }], 'timestamp': '2019-03-25T14:53:59Z'
-                            }], 'transactionId': 255
+                            }],
+                        'transactionId': 255
                     }]
 
 

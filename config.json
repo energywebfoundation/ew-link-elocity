@@ -1,4 +1,3 @@
-
 {
  "consumers": [
   {
@@ -27,12 +26,15 @@
  "producers": [
   {
    "energy-meter": {
-    "module": "energyweb.eds.energy_api",
-    "class_name": "BondAPIv1TestDevice3",
+    "module": "tasks.chargepoint",
+    "class_name": "EVchargerEnergyMeter",
     "class_parameters": {
-     "base_url": "base_url",
-     "source": "produced",
-     "device_id": 0
+     "service_urls": ["http://127.0.0.1:9200", "http://0.0.0.0:9200"],
+      "manufacturer":"Ebee",
+      "model":"EV-Charge Point Energy Meter",
+      "serial_number":"1610-0060",
+      "energy_unit":"WATT_HOUR",
+      "is_accumulated": false
     }
    },
    "carbon-emission": {
@@ -58,8 +60,11 @@
    "name": "Shell_Producer_Asset_1"
   }
  ],
- "ocpp16": {
+ "ocpp16-server": {
   "host": "0.0.0.0",
   "port": 80
+ },
+ "elastic-sync": {
+  "service_urls": ["http://10.10.1.167:9200", "http://0.0.0.0:9200"]
  }
 }

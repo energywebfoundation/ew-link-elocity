@@ -1,4 +1,6 @@
 import abc
+import datetime
+import inspect
 
 import energyweb
 
@@ -29,6 +31,27 @@ class Model(energyweb.Serializable):
 
     def __self__(self):
         return self
+
+    def to_dict(self):
+        def to_dict_or_self(obj):
+            to_dict = getattr(obj, 'to_dict', None)
+            if to_dict:
+                return to_dict()
+            else:
+                return obj
+
+        result = {}
+        init = getattr(self, '__init__')
+        for parameter in inspect.signature(init).parameters:
+            att = getattr(self, parameter)
+            if isinstance(att, list) or isinstance(att, set):
+                att = [self.to_dict_or_self(o) for o in att]
+            elif isinstance(att, dict):
+                att = {self.to_dict_or_self(k): self.to_dict_or_self(v) for k, v in att.items()}
+            elif isinstance(att, (datetime.datetime, datetime.date)):
+                att = att.isoformat()
+            result[parameter] = to_dict_or_self(att)
+        return result
 
     @staticmethod
     def from_dict(obj_dict: dict):

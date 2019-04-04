@@ -66,7 +66,7 @@ class ElasticSearchDAO(dao.DAO):
         :return: dict
         """
         self._db.indices.refresh(self._index)
-        res = self._db.search(self._index, self._doc_type, body=query)
+        res = self._db.search(self._index, self._doc_type, body={"query": query})
         return [self._cls.from_dict(hit["_source"]) for hit in res['hits']['hits']]
 
 
@@ -117,8 +117,7 @@ if __name__ == '__main__':
         cs_dao.update(cs0)
         print(f'{cs_dao.retrieve_all()}')
         print('\n6. query all with same port')
-        query = {"query": {"match_all": {}}, "filter": {"script": "doc['port'].value ==  doc['port'].value"}}
-        query = {"query": {"bool": {"must": {"script": {"script": {"source": "doc['port'].value ==  doc['port'].value", "lang": "painless"}}}}}}
+        query = {"bool": {"must": {"script": {"script": {"source": "doc['port'].value ==  doc['port'].value", "lang": "painless"}}}}}
         print(f'{cs_dao.query(query)}')
         cs_dao.delete_all()
     except es.ElasticsearchException as e:

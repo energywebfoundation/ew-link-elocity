@@ -3,7 +3,7 @@ import datetime
 import uuid
 from dataclasses import dataclass, field
 
-from tasks.database.dao import Model
+from tasks.database import dao
 
 
 @dataclass
@@ -38,18 +38,18 @@ class Ocpp16:
             return msg
 
     @dataclass
-    class Tag:
+    class Tag(dao.Model):
         tag_id: str
         expiry_date: datetime.datetime
 
         @staticmethod
         def from_dict(obj_dict):
-            obj_dict['expiry_date'] = datetime.datetime.fromisoformat(obj_dict['expiry_date']) if obj_dict[
-                'expiry_date'] else None
+            obj_dict['expiry_date'] = datetime.datetime.fromisoformat(obj_dict['expiry_date']) \
+                if obj_dict['expiry_date'] else None
             return Ocpp16.Tag(**obj_dict)
 
     @dataclass
-    class Transaction:
+    class Transaction(dao.Model):
         tx_id: int
         tag_id: str
         connector_id: int
@@ -60,10 +60,10 @@ class Ocpp16:
 
         @staticmethod
         def from_dict(obj_dict):
-            obj_dict['time_start'] = datetime.datetime.fromisoformat(
-                obj_dict['time_start']) if 'time_start' in obj_dict else None
-            obj_dict['time_end'] = datetime.datetime.fromisoformat(
-                obj_dict['time_end']) if 'time_end' in obj_dict else None
+            obj_dict['time_start'] = datetime.datetime.fromisoformat( obj_dict['time_start']) \
+                if 'time_start' in obj_dict and obj_dict['time_start'] else None
+            obj_dict['time_end'] = datetime.datetime.fromisoformat(obj_dict['time_end']) \
+                if 'time_end' in obj_dict and obj_dict['time_end'] else None
             return Ocpp16.Transaction(**obj_dict)
 
     def _answer(self, req: Request, body: dict):
@@ -91,15 +91,21 @@ class Ocpp16:
         self.transactions[tx_id] = Ocpp16.Transaction(tx_id, tag_id, conn_id, time_start, meter_start)
         return self.transactions[tx_id]
 
-    def _register_tx_stop(self, tx_id: int, timestamp: str, meter_stop: int, tag_id: str):
+    def _register_tx_stop(self, tx_id: int, timestamp: str, meter_stop: int, tag_id: str, tx_data: list):
         time_end = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
         if tx_id not in self.transactions:
-            self.transactions[tx_id] = Ocpp16.Transaction(tx_id, tag_id, 0, datetime.datetime.now(), 0, time_end,
-                                                          meter_stop)
-            return self.transactions[tx_id]
-        tx = self.transactions[tx_id]
-        tx.time_end = time_end
-        tx.meter_stop = meter_stop
+            tx = Ocpp16.Transaction(tx_id, tag_id, 0, datetime.datetime.now(), 0, time_end, meter_stop)
+            samples = []
+            [samples.extend([(sample, data['timestamp']) for sample in data['sampledValue']]) for data in tx_data]
+            for sample, timestamp in samples:
+                if sample['context'] == 'Transaction.Begin':
+                    tx.meter_start = sample['value']
+                    tx.time_start = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                    break
+            self.transactions[tx_id] = tx
+        else:
+            self.transactions[tx_id].time_end = time_end
+            self.transactions[tx_id].meter_stop = meter_stop
         return self.transactions[tx_id]
 
     def _handle_charging_station(self, serial_number: str, metadata: dict):
@@ -191,7 +197,8 @@ class Ocpp16:
 
             elif request.typ == 'StopTransaction':
                 tx = self._register_tx_stop(tx_id=request.body['transactionId'], timestamp=request.body['timestamp'],
-                                            meter_stop=request.body['meterStop'], tag_id=request.body['idTag'])
+                                            meter_stop=request.body['meterStop'], tag_id=request.body['idTag'],
+                                            tx_data=request.body['transactionData'])
                 tag = self._authorize_tag(request.body['idTag'])
                 if tag:
                     self._answer(request, {"transactionId": tx.tx_id, "idTagInfo": {"status": "Accepted",
@@ -202,7 +209,7 @@ class Ocpp16:
                 print(f"Unknown Request: {request.serialize()}")
 
 
-class ChargingStation(Model, Ocpp16):
+class ChargingStation(dao.Model, Ocpp16):
 
     def __init__(self, host: str, port: int, reg_id: str, last_seen: datetime.datetime = None, metadata: dict = None,
                  serial_number: str = None, connectors: dict = None, last_heartbeat: dict = None,
@@ -215,18 +222,22 @@ class ChargingStation(Model, Ocpp16):
         self.serial_number = serial_number if serial_number else None
         self.connectors = connectors if connectors else {}
         self.last_heartbeat = last_heartbeat if last_heartbeat else None
-        Model.__init__(self, reg_id=reg_id)
+        dao.Model.__init__(self, reg_id=reg_id)
         Ocpp16.__init__(self)
         self.transactions = transactions if transactions else {}
         self.tags = tags if tags else {}
 
     @dataclass
-    class Connector:
+    class Connector(dao.Model):
         connector_id: int
         last_status: str
         meter_read: str
         meter_unit: str
         metadata: dict
+
+        @staticmethod
+        def from_dict(obj_dict: dict):
+            return ChargingStation.Connector(**obj_dict)
 
     def _handle_charging_station(self, serial_number: str, metadata: dict):
         self.serial_number = serial_number
@@ -254,7 +265,7 @@ class ChargingStation(Model, Ocpp16):
         print(f'Request {res.serialize()} rejected')
 
     def to_dict(self):
-        dict_obj = super(Model, self).to_dict()
+        dict_obj = super().to_dict()
         dict_obj['reg_id'] = self.reg_id
         dict_obj['req_queue'] = None
         dict_obj['res_queue'] = None
@@ -264,12 +275,12 @@ class ChargingStation(Model, Ocpp16):
 
     @staticmethod
     def from_dict(obj_dict: dict):
-        obj_dict['last_seen'] = datetime.datetime.fromisoformat(
-            obj_dict['last_seen']) if 'last_seen' in obj_dict else None
-        obj_dict['connectors'] = {item['connector_id']: ChargingStation.Connector(**item) for item in
-                                  obj_dict['connectors']} if 'connectors' in obj_dict else []
-        obj_dict['transactions'] = {item['tx_id']: Ocpp16.Transaction.from_dict(item) for item in
-                                    obj_dict['transactions']} if 'transactions' in obj_dict else []
-        obj_dict['tags'] = {item['tag_id']: Ocpp16.Tag.from_dict(item) for item in
-                            obj_dict['tags']} if 'tags' in obj_dict else []
+        obj_dict['last_seen'] = datetime.datetime.fromisoformat(obj_dict['last_seen']) \
+            if 'last_seen' in obj_dict else None
+        obj_dict['connectors'] = {k: ChargingStation.Connector.from_dict(v) for k, v in obj_dict['connectors'].items()} \
+            if 'connectors' in obj_dict else {}
+        obj_dict['transactions'] = {k: Ocpp16.Transaction.from_dict(v) for k, v in obj_dict['transactions'].items()} \
+            if 'transactions' in obj_dict else {}
+        obj_dict['tags'] = {k: Ocpp16.Tag.from_dict(v) for k, v in obj_dict['tags'].items()} \
+            if 'tags' in obj_dict else {}
         return ChargingStation(**obj_dict)
