@@ -11,7 +11,7 @@ IP = '0.0.0.0'
 # IP = 'localhost'
 # IP = '192.168.123.220'
 PORT = 80
-PORT = 8080
+# PORT = 8080
 
 boot_notification = [2, '52325482', 'BootNotification',
                      {

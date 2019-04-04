@@ -1,6 +1,5 @@
-#!/usr/bin/env python
+import asyncio
 import datetime
-import time
 
 import energyweb
 
@@ -10,7 +9,7 @@ from energyweb.config import CooV1ConsumerConfiguration, CooV1ProducerConfigurat
 class CooGeneralTask(energyweb.Logger, energyweb.Task):
 
     def __init__(self, task_config: energyweb.config.CooV1ConsumerConfiguration, polling_interval: datetime.timedelta,
-                 store: str = '', enable_debug: bool = False):
+                 queue: asyncio.Queue, store: str = '', enable_debug: bool = False):
         """
         :param task_config: Consumer configuration class instance
         :param polling_interval: Time interval between interrupts check
@@ -22,15 +21,7 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
         self.msg_success = 'minted %s watts - block # %s'
         self.msg_error = 'energy_meter: %s - stack: %s'
         energyweb.Logger.__init__(self, log_name=task_config.name, store=store, enable_debug=enable_debug)
-        energyweb.Task.__init__(self, polling_interval=polling_interval, eager=False)
-
-    def main(self, duration: int = 3):
-        running = True
-        self._log_configuration()
-        while running:
-            self._log_measured_energy()
-            time.sleep(duration)
-        return False
+        energyweb.Task.__init__(self, queue=queue, polling_interval=polling_interval, eager=False, run_forever=True)
 
     def _log_configuration(self):
         """
@@ -38,8 +29,8 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
         """
         message = '[CONFIG] name: %s - energy energy_meter: %s'
         if self.store and self.enable_debug:
-            self.console.debug('[CONFIG] path to logs: %s', self.store)
-        self.console.debug(message, self.task_config.name, self.task_config.energy_meter.__class__.__name__)
+            self.console.info('[CONFIG] path to logs: %s', self.store)
+        self.console.info(message, self.task_config.name, self.task_config.energy_meter.__class__.__name__)
 
     def _log_measured_energy(self):
         """
@@ -56,16 +47,16 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
                 energy_data = self._transform(local_file_hash=last_file_hash)
                 if not energy_data.is_meter_down:
                     local_chain_file = local_storage.add_to_chain(data=energy_data)
-                    self.console.info('%s created', local_chain_file)
+                    self.console.debug('%s created', local_chain_file)
             else:
                 last_chain_hash = self.task_config.smart_contract.last_hash()
                 energy_data = self._transform(local_file_hash=last_chain_hash)
             # Logging to the blockchain
             tx_receipt = self.task_config.smart_contract.mint(energy_data)
             block_number = str(tx_receipt['blockNumber'])
-            self.console.info(self.msg_success, energy_data.to_dict(), block_number)
+            self.console.debug(self.msg_success, energy_data.to_dict(), block_number)
         except Exception as e:
-            self.console.exception(self.msg_error, self.task_config.energy_meter.__class__.__name__, e)
+            self._handle_exception(e)
             self.console.warning('Smart-contract is unreachable.')
 
     def _transform(self, local_file_hash: str):
@@ -88,22 +79,35 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
                 raise AssertionError('Make sure to inherit ExternalData when reading data from IntegrationPoint.')
             return result, False
         except Exception as e:
-            # TODO debug log self.error_log
-            self.console.exception(self.msg_error, self.task_config.energy_meter.__class__.__name__, e)
+            self._handle_exception(e)
             return None, True
+
+    async def _prepare(self):
+        self._log_configuration()
+
+    async def _main(self, duration: int = 3):
+        self._log_measured_energy()
+
+    async def _finish(self):
+        pass
+
+    def _handle_exception(self, e: Exception):
+        # TODO debug log self.error_log
+        self.console.exception(self.msg_error, self.task_config.energy_meter.__class__.__name__, e)
 
 
 class CooProducerTask(CooGeneralTask):
 
-    def __init__(self, task_config: CooV1ProducerConfiguration, polling_interval: datetime.timedelta, store: str = None,
-                 enable_debug: bool = False):
+    def __init__(self, task_config: CooV1ProducerConfiguration, polling_interval: datetime.timedelta,
+                 queue: asyncio.Queue, store: str = None, enable_debug: bool = False):
         """
         :param task_config: Producer configuration class instance
         :param polling_interval: Time interval between interrupts check
+        :param queue: For thread safe messaging between tasks
         :param store: Path to folder where the log files will be stored in disk. DEFAULT won't store data in-disk.
         :param enable_debug: Enabling debug creates a log for errors. Needs storage. Please manually delete it.
         """
-        super().__init__(task_config=task_config, polling_interval=polling_interval, store=store,
+        super().__init__(task_config=task_config, polling_interval=polling_interval, store=store, queue=queue,
                          enable_debug=enable_debug)
 
     def _transform(self, local_file_hash: str) -> energyweb.EnergyData:
@@ -129,15 +133,17 @@ class CooProducerTask(CooGeneralTask):
 
 class CooConsumerTask(CooGeneralTask):
 
-    def __init__(self, task_config: CooV1ConsumerConfiguration, polling_interval: datetime.timedelta, store: str = None,
-                 enable_debug: bool = False):
+    def __init__(self, task_config: CooV1ConsumerConfiguration, polling_interval: datetime.timedelta,
+                 queue: asyncio.Queue, store: str = None, enable_debug: bool = False):
         """
         :param task_config: Consumer configuration class instance
         :param polling_interval: Time interval between interrupts check
+        :param queue: For thread safe messaging between tasks
         :param store: Path to folder where the log files will be stored in disk. DEFAULT won't store data in-disk.
         :param enable_debug: Enabling debug creates a log for errors. Needs storage. Please manually delete it.
         """
-        super().__init__(task_config=task_config, polling_interval=polling_interval, store=store, enable_debug=enable_debug)
+        super().__init__(task_config=task_config, polling_interval=polling_interval, store=store, queue=queue,
+                         enable_debug=enable_debug)
 
     def _transform(self, local_file_hash: str) -> energyweb.EnergyData:
         """
@@ -154,4 +160,3 @@ class CooConsumerTask(CooGeneralTask):
             'previous_hash': local_file_hash,
         }
         return energyweb.ConsumedEnergy(**consumed)
-

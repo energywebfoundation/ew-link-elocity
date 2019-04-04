@@ -2,6 +2,7 @@ import asyncio
 import datetime
 
 import energyweb
+from energyweb import ExternalData
 
 from tasks.database.dao import DAOFactory
 from tasks.database.elasticdao import ElasticSearchDAOFactory, ElasticSearchDAO
@@ -10,17 +11,12 @@ from tasks.ocpp16.protocol import ChargingStation
 from tasks.ocpp16.server import Ocpp16Server
 
 
-class CustomOcpp16Server(Ocpp16Server):
+class EVchargerEnergyMeter(energyweb.IntegrationPoint):
+    def read_state(self, *args, **kwargs) -> ExternalData:
+        pass
 
-    def __init__(self, factory, queue, console):
-        self.console = console
-        super().__init__(factory, queue)
-
-    def _message_handler(self, msg):
-        self.console.debug(f'{msg.serialize()}')
-
-    def _error_handler(self, text, e):
-        self.console.error(f'{text}{e.with_traceback(e.__traceback__)}')
+    def write_state(self, *args, **kwargs) -> ExternalData:
+        pass
 
 
 class Ocpp16ServerTask(energyweb.Task, energyweb.Logger):
@@ -34,10 +30,22 @@ class Ocpp16ServerTask(energyweb.Task, energyweb.Logger):
         energyweb.Task.__init__(self, queue, polling_interval=datetime.timedelta(minutes=5), eager=True, run_forever=True)
         energyweb.Logger.__init__(self, 'Ocpp16Server')
 
+    class Ocpp16ServerLogger(Ocpp16Server):
+
+        def __init__(self, factory, queue, console):
+            self.console = console
+            super().__init__(factory, queue)
+
+        def _message_handler(self, msg):
+            self.console.debug(f'{msg.serialize()}')
+
+        def _error_handler(self, text, e):
+            self.console.error(f'{text}{e.with_traceback(e.__traceback__)}')
+
     async def _prepare(self):
         if not {'ev_charger_command', 'ev_chargers_available'}.issubset(self._queue.keys()):
             raise AssertionError("Please register queues 'ev_charger_command' and 'ev_chargers_available' on the app.")
-        server = CustomOcpp16Server(self._factory, self._queue, self.console)
+        server = self.Ocpp16ServerLogger(self._factory, self._queue, self.console)
         self._future = server.get_server_future(*self.server_address)
         self.console.info(f'Server running on http://{self.server_address[0]}:{self.server_address[1]}')
 

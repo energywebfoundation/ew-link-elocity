@@ -6,8 +6,6 @@ import pprint
 import websockets
 
 from tasks.database.dao import DAOFactory
-from tasks.database.elasticdao import ElasticSearchDAOFactory
-from tasks.database.memorydao import MemoryDAOFactory
 from tasks.ocpp16.protocol import ChargingStation, Ocpp16
 
 
@@ -191,12 +189,12 @@ async def command(queue: dict):
 
 if __name__ == '__main__':
     try:
-
+        from tasks.database.memorydao import MemoryDAOFactory
         IP = 'localhost'
         # IP = '192.168.123.220'
         PORT = 8080
-        # FACTORY = MemoryDAOFactory()
-        FACTORY = ElasticSearchDAOFactory('elocity', 'http://127.0.0.1:9200')
+        FACTORY = MemoryDAOFactory()
+        # FACTORY = ElasticSearchDAOFactory('elocity', 'http://127.0.0.1:9200')
         QUEUE = {'ev_charger_command': asyncio.Queue(maxsize=10),
                  'ev_chargers_available': asyncio.Queue(maxsize=5)}
         server_cls = Ocpp16Server(FACTORY, QUEUE)
