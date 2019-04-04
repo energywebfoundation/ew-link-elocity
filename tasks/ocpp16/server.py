@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import pprint
 
@@ -21,9 +22,12 @@ class Ocpp16Server:
         :param cs: ChargingStation
         :param msg: Message
         """
-        # TODO: Search cs by serial_number and replace ID(host:port) with new address.
         cs_dao = self._factory.get_instance(ChargingStation)
-        cs = cs_dao.create(cs)
+        try:
+            cs = cs_dao.find_by({'host': cs.host, 'port': cs.port})
+            cs.last_seen = datetime.datetime.now()
+        except:
+            cs = cs_dao.create(cs)
         if isinstance(msg, Ocpp16.Response):
             if msg.msg_id not in cs.req_queue:
                 raise ConnectionError('Out-of-sync: Response for an unsent message.')

@@ -1,4 +1,5 @@
 import abc
+
 import energyweb
 
 
@@ -28,6 +29,10 @@ class Model(energyweb.Serializable):
 
     def __self__(self):
         return self
+
+    @staticmethod
+    def from_dict(obj_dict: dict):
+        raise NotImplementedError
 
 
 class ABCSingleton(abc.ABCMeta):
@@ -95,7 +100,7 @@ class DAOFactory(metaclass=ABCSingleton):
     def __init__(self): pass
 
     @abc.abstractmethod
-    def get_instance(self, cls): pass
+    def get_instance(self, cls) -> DAO: pass
 
 
 class DAOI(DAO):

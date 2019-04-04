@@ -6,7 +6,7 @@ import energyweb
 
 from tasks.ocpp16.memorydao import MemoryDAOFactory
 from tasks.origin import CooProducerTask, CooConsumerTask
-from tasks.ev_charger import Ocpp16ServerTask
+from tasks.chargepoint import Ocpp16ServerTask
 
 
 class MyApp(energyweb.dispatcher.App):

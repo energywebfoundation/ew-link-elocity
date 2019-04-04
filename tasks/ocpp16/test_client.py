@@ -1,5 +1,5 @@
 """
-Test client for ws_server.py with real collected data.
+Test client for server.py with real collected data.
 """
 
 import asyncio

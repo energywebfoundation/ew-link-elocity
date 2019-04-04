@@ -50,8 +50,7 @@ class MemoryDAO(dao.DAO):
     def delete(self, obj):
         del self._stack[obj.reg_id]
 
-    def find_by(self, attributes):
-        assert isinstance(attributes, dict)
+    def find_by(self, attributes: dict):
         result = []
         if len(self._stack) == 0:
             return result
@@ -62,4 +61,6 @@ class MemoryDAO(dao.DAO):
                 stack_item = reg.__dict__
                 if stack_item[key] == attributes[key]:
                     result.append(deepcopy(reg))
+        if len(result) < 1:
+            FileNotFoundError
         return result

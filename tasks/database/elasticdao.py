@@ -6,14 +6,15 @@ from tasks.ocpp16.protocol import ChargingStation
 
 class ElasticSearchDAO(dao.DAO):
 
-    def __init__(self, id_att_name: str, cls_name: str, *service_urls: str):
+    def __init__(self, id_att_name: str, cls: dao.Model, *service_urls: str):
         """
         :param id_att_name: Class id attribute name
-        :param cls_name: Class name to be stored
+        :param cls: Class to instantiate
         :param service_urls: i.e. 'http://localhost:9200', 'https://remotehost:9000'
         """
         self._index = id_att_name
-        self._doc_type = cls_name
+        self._cls = cls
+        self._doc_type = cls.__name__
         self._db = es.Elasticsearch(service_urls)
 
     def create(self, obj: dao.Model):
@@ -27,12 +28,12 @@ class ElasticSearchDAO(dao.DAO):
         response = self._db.get(self._index, self._doc_type, id=_id)
         if not response['found']:
             raise es.ElasticsearchException('Object not found.')
-        return response['_source']
+        return self._cls.from_dict(response['_source'])
 
     def retrieve_all(self):
         self._db.indices.refresh(self._index)
         response = self._db.search(self._index, self._doc_type, body={"query": {"match_all": {}}})
-        return [hit["_source"] for hit in response['hits']['hits']]
+        return [self._cls.from_dict(hit["_source"]) for hit in response['hits']['hits']]
 
     def update(self, obj: dao.Model):
         self.create(obj)
@@ -42,26 +43,26 @@ class ElasticSearchDAO(dao.DAO):
         if not response['result'] == 'deleted':
             raise es.ElasticsearchException('Object not found.')
 
-    def find_by(self, attributes: dict) -> [dict]:
+    def find_by(self, attributes: [dict]) -> [dict]:
         self._db.indices.refresh(self._index)
-        res = self._db.search(self._index, self._doc_type, body={"query": {"bool": {"must": [{"match": attributes}]}}})
-        return [hit["_source"] for hit in res['hits']['hits']]
+        query = {"query": {"bool": {"must": [{"match": {k: attributes[k]}} for k in attributes]}}}
+        res = self._db.search(self._index, self._doc_type, body=query)
+        return [self._cls.from_dict(hit["_source"]) for hit in res['hits']['hits']]
 
     def delete_all(self):
         self._db.delete_by_query(self._index, doc_type=self._doc_type, body={"query": {"match_all": {}}})
 
-    def delete_unidentified(self):
-        self._db.delete_by_query(self._index, doc_type=self._doc_type,
-                                 body={"bool": {"must_not": {"exists": {"field": "reg_id"}}}})
+    def delete_all_blank(self, field: str):
+        self._db.delete_by_query(self._index, doc_type=self._doc_type, body={"bool": {"must_not": {"exists": {"field": field}}}})
 
-    def query(self, attributes: dict) -> [dict]:
+    def query(self, query: dict) -> [dict]:
         """
-        :param attributes: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/query-filter-context.html
+        :param query: https://www.elastic.co/guide/en/elasticsearch/reference/5.6/query-filter-context.html
         :return: dict
         """
         self._db.indices.refresh(self._index)
-        res = self._db.search(self._index, self._doc_type, body={"query": attributes})
-        return [hit["_source"] for hit in res['hits']['hits']]
+        res = self._db.search(self._index, self._doc_type, body=query)
+        return [self._cls.from_dict(hit["_source"]) for hit in res['hits']['hits']]
 
 
 class ElasticSearchDAOFactory(dao.DAOFactory):
@@ -75,7 +76,7 @@ class ElasticSearchDAOFactory(dao.DAOFactory):
     def get_instance(self, cls) -> ElasticSearchDAO:
         if id(cls) in list(self._instances.keys()):
             return self._instances[id(cls)]
-        self._instances[id(cls)] = ElasticSearchDAO(self._index, cls.__name__, *self._service_urls)
+        self._instances[id(cls)] = ElasticSearchDAO(self._index, cls, *self._service_urls)
         return self._instances[id(cls)]
 
 
@@ -84,8 +85,10 @@ if __name__ == '__main__':
     cs_dao = factory.get_instance(ChargingStation)
     cs0 = ChargingStation(host='localhost', port=8080)
     cs0.serial_number = '111'
+    cs0.reg_id = f'{cs0.host}:{cs0.port}'
     cs1 = ChargingStation(host='localhost', port=8081)
     cs1.serial_number = '222'
+    cs1.reg_id = f'{cs1.host}:{cs1.port}'
     cs2 = ChargingStation(host='localhost', port=8082)
     try:
         cs_dao.delete_all()
@@ -94,16 +97,24 @@ if __name__ == '__main__':
     finally:
         print('DB is clean.')
     try:
+        print('\n1. created')
         [cs_dao.create(cs) for cs in [cs0, cs1, cs2]]
         print(f'{cs_dao.retrieve_all()}')
-        print(f"{cs_dao.retrieve('111')}")
+        print('\n2. retrieve first')
+        print(f"{cs_dao.retrieve(cs0.reg_id)}")
+        print('\n3. delete second')
         cs_dao.delete(cs1)
         print(f'{cs_dao.retrieve_all()}')
-        cs0.port = '8090'
+        print('\n4. find by port 8082 w/out id')
+        print(f'{cs_dao.find_by({"port": "8082"})}')
+        print('\n5. update first')
+        cs0.port = '8082'
         cs_dao.update(cs0)
         print(f'{cs_dao.retrieve_all()}')
-        query = {"bool": {"must": [{"match": {"port": "8090"}}]}}
-        print(f'{cs_dao.find_by(query)}')
+        print('\n6. query all with same port')
+        query = {"query": {"match_all": {}}, "filter": {"script": "doc['port'].value ==  doc['port'].value"}}
+        query = {"query": {"bool": {"must": {"script": {"script": {"source": "doc['port'].value ==  doc['port'].value", "lang": "painless"}}}}}}
+        print(f'{cs_dao.query(query)}')
         cs_dao.delete_all()
     except es.ElasticsearchException as e:
         print(f'Failed because elastic search said: {e.with_traceback(e.__traceback__)}')
