@@ -3,8 +3,9 @@ import datetime
 
 import energyweb
 
-from tasks.database.dao import DAOFactory, DAO
-from tasks.database.elasticdao import ElasticSearchDAOFactory
+from tasks.database.dao import DAOFactory
+from tasks.database.elasticdao import ElasticSearchDAOFactory, ElasticSearchDAO
+from tasks.database.memorydao import MemoryDAOFactory, MemoryDAO
 from tasks.ocpp16.protocol import ChargingStation
 from tasks.ocpp16.server import Ocpp16Server
 
@@ -55,7 +56,7 @@ class Ocpp16ServerTask(energyweb.Task, energyweb.Logger):
             self._handle_exception(e)
 
 
-class ElasticCleanUp(energyweb.Task):
+class ElasticSync(energyweb.Task):
 
     def __init__(self, queue: dict, service_urls: tuple):
         self.service_urls = service_urls
@@ -66,35 +67,36 @@ class ElasticCleanUp(energyweb.Task):
 
     async def _main(self, *args):
 
-        def merge_reconnected_stations(cs_dao: DAO):
+        def merge_reconnected_stations():
             try:
-                query = {"query": {"bool": {"must": {"script": {"script":
-                        {"source": "doc['serial_number'].value ==  doc['serial_number'].value",
-                         "lang": "painless"}}}}},
-                         "sort": [{"arbitraryDate": {"order": "desc"}}]}
-                results = cs_dao.query(query)
-                oldest: ChargingStation = results[0]
-                for cs in results[1:].reverse():
+                idd_css = [cs for cs in mem_dao.retrieve_all() if cs.serial_number]
+                idd_css.sort(key=lambda cs: cs.last_seen, reverse=True)
+                oldest: ChargingStation = idd_css[0]
+                for cs in idd_css[1:]:
                     oldest.host = cs.host
                     oldest.port = cs.port
                     oldest.tags.update(cs.tags)
                     oldest.transactions.update(cs.transactions)
                     oldest.connectors.update(cs.connectors)
                     oldest.last_heartbeat = cs.last_heartbeat
-                    cs_dao.delete(cs)
+                    mem_dao.delete(cs)
+                mem_dao.update(oldest)
+                oldest.reg_id = oldest.serial_number
+                els_dao.update(oldest)
             except Exception as e:
-                self._handle_exception(e)
+                print(f'ElasticSync: Merging stations failed because: {e.with_traceback(e.__traceback__)}')
 
-        def remove_unknown_stations(cs_dao: DAO):
+        def remove_unknown_stations():
             try:
-                cs_dao.delete_all_blank('serial_number')
+                result = mem_dao.find_by({'serial_number': None})
+                [mem_dao.delete(cs) for cs in result]
             except Exception as e:
                 self._handle_exception(e)
 
-        factory = ElasticSearchDAOFactory('elocity', *self.service_urls)
-        cs_dao = factory.get_instance(ChargingStation)
-        merge_reconnected_stations(cs_dao)
-        remove_unknown_stations(cs_dao)
+        els_dao: ElasticSearchDAO = ElasticSearchDAOFactory('elocity', *self.service_urls).get_instance(ChargingStation)
+        mem_dao: MemoryDAO = MemoryDAOFactory().get_instance(ChargingStation)
+        merge_reconnected_stations()
+        remove_unknown_stations()
 
     async def _finish(self):
         pass

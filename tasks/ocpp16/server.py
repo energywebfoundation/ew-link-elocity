@@ -6,6 +6,7 @@ import pprint
 import websockets
 
 from tasks.database.dao import DAOFactory
+from tasks.database.elasticdao import ElasticSearchDAOFactory
 from tasks.database.memorydao import MemoryDAOFactory
 from tasks.ocpp16.protocol import ChargingStation, Ocpp16
 
@@ -24,10 +25,10 @@ class Ocpp16Server:
         """
         cs_dao = self._factory.get_instance(ChargingStation)
         try:
-            cs = cs_dao.find_by({'host': cs.host, 'port': cs.port})
+            cs = cs_dao.retrieve(cs.reg_id)
             cs.last_seen = datetime.datetime.now()
         except:
-            cs = cs_dao.create(cs)
+            cs_dao.create(cs)
         if isinstance(msg, Ocpp16.Response):
             if msg.msg_id not in cs.req_queue:
                 raise ConnectionError('Out-of-sync: Response for an unsent message.')
@@ -111,7 +112,7 @@ class Ocpp16Server:
 
                 msg = Ocpp16.Request(*packet) if packet[0] == 2 else Ocpp16.Response(*packet)
                 host, port = websocket.remote_address[0], websocket.remote_address[1]
-                cs = ChargingStation(host, port)
+                cs = ChargingStation(host, port, f'{host}:{port}')
 
                 self._message_handler(msg)
                 self._dispatcher(cs=cs, msg=msg)
@@ -194,14 +195,15 @@ if __name__ == '__main__':
         IP = 'localhost'
         # IP = '192.168.123.220'
         PORT = 8080
-        FACTORY = MemoryDAOFactory()
+        # FACTORY = MemoryDAOFactory()
+        FACTORY = ElasticSearchDAOFactory('elocity', 'http://127.0.0.1:9200')
         QUEUE = {'ev_charger_command': asyncio.Queue(maxsize=10),
                  'ev_chargers_available': asyncio.Queue(maxsize=5)}
         server_cls = Ocpp16Server(FACTORY, QUEUE)
         future = server_cls.get_server_future(IP, PORT)
         print(f'Server started at http://{IP}:{PORT}.')
         asyncio.get_event_loop().run_until_complete(future)
-        asyncio.get_event_loop().run_until_complete(command(QUEUE))
+        # asyncio.get_event_loop().run_until_complete(command(QUEUE))
         asyncio.get_event_loop().run_forever()
     except Exception as e:
         print(f'Server failed because {e.with_traceback(e.__traceback__)}')

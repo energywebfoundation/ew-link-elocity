@@ -204,7 +204,7 @@ class Ocpp16:
 
 class ChargingStation(Model, Ocpp16):
 
-    def __init__(self, host: str, port: int, reg_id=None, last_seen: datetime.datetime = None, metadata: dict = None,
+    def __init__(self, host: str, port: int, reg_id: str, last_seen: datetime.datetime = None, metadata: dict = None,
                  serial_number: str = None, connectors: dict = None, last_heartbeat: dict = None,
                  transactions: dict = None,
                  tags: dict = None):
@@ -215,7 +215,7 @@ class ChargingStation(Model, Ocpp16):
         self.serial_number = serial_number if serial_number else None
         self.connectors = connectors if connectors else {}
         self.last_heartbeat = last_heartbeat if last_heartbeat else None
-        Model.__init__(self, reg_id=reg_id if reg_id else f'{host}:{port}')
+        Model.__init__(self, reg_id=reg_id)
         Ocpp16.__init__(self)
         self.transactions = transactions if transactions else {}
         self.tags = tags if tags else {}

@@ -3,19 +3,6 @@ from copy import deepcopy
 import tasks.database.dao as dao
 
 
-class MemoryDAOFactory(dao.DAOFactory):
-
-    def __init__(self):
-        super().__init__()
-        self.__instances = {}
-
-    def get_instance(self, cls):
-        if id(cls) in list(self.__instances.keys()):
-            return self.__instances[id(cls)]
-        self.__instances[id(cls)] = MemoryDAO()
-        return self.__instances[id(cls)]
-
-
 class MemoryDAO(dao.DAO):
     """
     Store values in memory instead of any persistence
@@ -62,5 +49,18 @@ class MemoryDAO(dao.DAO):
                 if stack_item[key] == attributes[key]:
                     result.append(deepcopy(reg))
         if len(result) < 1:
-            FileNotFoundError
+            raise FileNotFoundError
         return result
+
+
+class MemoryDAOFactory(dao.DAOFactory):
+
+    def __init__(self):
+        super().__init__()
+        self.__instances = {}
+
+    def get_instance(self, cls) -> MemoryDAO:
+        if id(cls) in list(self.__instances.keys()):
+            return self.__instances[id(cls)]
+        self.__instances[id(cls)] = MemoryDAO()
+        return self.__instances[id(cls)]

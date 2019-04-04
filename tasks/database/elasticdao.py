@@ -1,3 +1,5 @@
+import logging
+
 import elasticsearch as es
 
 from tasks.database import dao
@@ -16,6 +18,9 @@ class ElasticSearchDAO(dao.DAO):
         self._cls = cls
         self._doc_type = cls.__name__
         self._db = es.Elasticsearch(service_urls)
+        # suppress warnings
+        es_logger = logging.getLogger('elasticsearch')
+        es_logger.setLevel(logging.ERROR)
 
     def create(self, obj: dao.Model):
         response = self._db.index(index=self._index, doc_type=self._doc_type, body=obj.to_dict(), id=obj.reg_id,
@@ -83,13 +88,13 @@ class ElasticSearchDAOFactory(dao.DAOFactory):
 if __name__ == '__main__':
     factory = ElasticSearchDAOFactory('elocity', 'http://127.0.0.1:9200', 'http://0.0.0.0:9200')
     cs_dao = factory.get_instance(ChargingStation)
-    cs0 = ChargingStation(host='localhost', port=8080)
+    cs0 = ChargingStation(host='localhost', port=8080, reg_id='localhost:8080')
     cs0.serial_number = '111'
     cs0.reg_id = f'{cs0.host}:{cs0.port}'
-    cs1 = ChargingStation(host='localhost', port=8081)
+    cs1 = ChargingStation(host='localhost', port=8081, reg_id='localhost:8080')
     cs1.serial_number = '222'
     cs1.reg_id = f'{cs1.host}:{cs1.port}'
-    cs2 = ChargingStation(host='localhost', port=8082)
+    cs2 = ChargingStation(host='localhost', port=8082, reg_id='sn:4441512')
     try:
         cs_dao.delete_all()
     except:
