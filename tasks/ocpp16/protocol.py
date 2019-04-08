@@ -44,8 +44,7 @@ class Ocpp16:
 
         @staticmethod
         def from_dict(obj_dict):
-            obj_dict['expiry_date'] = datetime.datetime.fromisoformat(obj_dict['expiry_date']) \
-                if obj_dict['expiry_date'] else None
+            obj_dict['expiry_date'] = datetime.datetime.fromisoformat(obj_dict['expiry_date'])
             return Ocpp16.Tag(**obj_dict)
 
     @dataclass
@@ -60,8 +59,7 @@ class Ocpp16:
 
         @staticmethod
         def from_dict(obj_dict):
-            obj_dict['time_start'] = datetime.datetime.fromisoformat( obj_dict['time_start']) \
-                if 'time_start' in obj_dict and obj_dict['time_start'] else None
+            obj_dict['time_start'] = datetime.datetime.fromisoformat(obj_dict['time_start'])
             obj_dict['time_end'] = datetime.datetime.fromisoformat(obj_dict['time_end']) \
                 if 'time_end' in obj_dict and obj_dict['time_end'] else None
             return Ocpp16.Transaction(**obj_dict)
@@ -163,7 +161,7 @@ class Ocpp16:
                 self._answer(request, {'currentTime': datetime.datetime.utcnow().isoformat()})
                 return
             elif request.typ == 'BootNotification':
-                self._handle_charging_station(request.body['chargePointSerialNumber'], metadata=request.body)
+                self._handle_charging_station(request.body['chargeBoxSerialNumber'], metadata=request.body)
                 self._answer(request, {'status': 'Accepted', 'currentTime': datetime.datetime.utcnow().isoformat(),
                                        'interval': 14400})
                 return

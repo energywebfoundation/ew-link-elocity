@@ -14,8 +14,9 @@ from tasks.ocpp16.server import Ocpp16Server
 class EVchargerEnergyMeter(energyweb.EnergyDevice):
 
     def __init__(self, service_urls: tuple, manufacturer, model, serial_number, energy_unit, is_accumulated,
-                 latitude=None, longitude=None):
+                 connector_id: int, latitude=None, longitude=None):
         self.service_urls = service_urls
+        self.connector_id = connector_id
         super().__init__(manufacturer, model, serial_number, energy_unit, is_accumulated, latitude, longitude)
 
     def read_state(self, *args, **kwargs) -> energyweb.EnergyData:
@@ -23,7 +24,10 @@ class EVchargerEnergyMeter(energyweb.EnergyDevice):
         results = els_dao.retrieve_all()
         results_a = els_dao.query({"bool": {
             "must_not": {"exists": {"field": 'co2_saved'}},
-            "must": [{"exists": {"field": 'meter_start'}}, {"exists": {"field": 'meter_stop'}}]
+            "must": [{"exists": {"field": 'meter_start'}},
+                     {"exists": {"field": 'meter_stop'}},
+                     {"match": {"serial_number": self.serial_number}},
+                     {"match": {"connector_id": self.connector_id}}]
         }})
         results_b = els_dao.query({"bool": {
             "must": [{"exists": {"field": 'meter_start'}}, {"exists": {"field": 'meter_stop'}}]
