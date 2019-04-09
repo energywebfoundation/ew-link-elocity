@@ -41,6 +41,7 @@ class Ocpp16:
     class Tag(dao.Model):
         tag_id: str
         expiry_date: datetime.datetime
+        last_used_in: str = None
 
         @staticmethod
         def from_dict(obj_dict):
@@ -54,14 +55,16 @@ class Ocpp16:
         connector_id: int
         time_start: datetime.datetime
         meter_start: int
-        time_end: datetime.datetime = None
+        time_stop: datetime.datetime = None
         meter_stop: int = None
+        cs_reg_id: str = None
+        co2_saved: int = None
 
         @staticmethod
         def from_dict(obj_dict):
             obj_dict['time_start'] = datetime.datetime.fromisoformat(obj_dict['time_start'])
-            obj_dict['time_end'] = datetime.datetime.fromisoformat(obj_dict['time_end']) \
-                if 'time_end' in obj_dict and obj_dict['time_end'] else None
+            obj_dict['time_stop'] = datetime.datetime.fromisoformat(obj_dict['time_stop']) \
+                if 'time_stop' in obj_dict and obj_dict['time_stop'] else None
             return Ocpp16.Transaction(**obj_dict)
 
     def _answer(self, req: Request, body: dict):
@@ -86,18 +89,18 @@ class Ocpp16:
     def _register_tx_start(self, conn_id: int, tag_id: str, timestamp: str, meter_start: int):
         tx_id = len(self.transactions) + 1
         time_start = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-        self.transactions[tx_id] = Ocpp16.Transaction(tx_id, tag_id, conn_id, time_start, meter_start)
+        self.transactions[tx_id] = Ocpp16.Transaction(tx_id, tag_id, conn_id, time_start, int(meter_start))
         return self.transactions[tx_id]
 
     def _register_tx_stop(self, tx_id: int, timestamp: str, meter_stop: int, tag_id: str, tx_data: list):
         time_end = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
         if tx_id not in self.transactions:
-            tx = Ocpp16.Transaction(tx_id, tag_id, 0, datetime.datetime.now(), 0, time_end, meter_stop)
+            tx = Ocpp16.Transaction(tx_id, tag_id, 0, datetime.datetime.now(), 0, time_end, int(meter_stop))
             samples = []
             [samples.extend([(sample, data['timestamp']) for sample in data['sampledValue']]) for data in tx_data]
             for sample, timestamp in samples:
                 if sample['context'] == 'Transaction.Begin':
-                    tx.meter_start = sample['value']
+                    tx.meter_start = int(sample['value'])
                     tx.time_start = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
                     break
             self.transactions[tx_id] = tx
@@ -269,6 +272,8 @@ class ChargingStation(dao.Model, Ocpp16):
         dict_obj['res_queue'] = None
         del dict_obj['req_queue']
         del dict_obj['res_queue']
+        del dict_obj['transactions']
+        del dict_obj['tags']
         return dict_obj
 
     @staticmethod

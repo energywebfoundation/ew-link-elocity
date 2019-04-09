@@ -6,7 +6,8 @@ import energyweb
 
 from tasks.database.memorydao import MemoryDAOFactory
 from tasks.origin import CooProducerTask, CooConsumerTask
-from tasks.chargepoint import Ocpp16ServerTask, ElasticSync
+from tasks.chargepoint import Ocpp16ServerTask
+from tasks.dbsync import ElasticSync
 
 
 class MyApp(energyweb.dispatcher.App):
@@ -26,13 +27,14 @@ class MyApp(energyweb.dispatcher.App):
                 raise energyweb.config.ConfigurationFileError('Malformed json.')
 
         def register_ocpp_server():
+            interval = datetime.timedelta(minutes=1)
             self._register_queue('ev_charger_command')
             self._register_queue('ev_chargers_available', 1)
             if 'ocpp16-server' not in app_config \
                     or not {'host', 'port'}.issubset(dict(app_config['ocpp16-server']).keys()):
                 raise energyweb.config.ConfigurationFileError('Configuration file missing Ocpp 1.6 configuration.')
             host, port = app_config['ocpp16-server']['host'], app_config['ocpp16-server']['port']
-            self._register_task(Ocpp16ServerTask(self.queue, MemoryDAOFactory(), host, port))
+            self._register_task(Ocpp16ServerTask(self.queue, MemoryDAOFactory(), interval, host, port))
 
         def register_origin():
             interval = datetime.timedelta(minutes=2)
@@ -49,14 +51,14 @@ class MyApp(energyweb.dispatcher.App):
                 raise energyweb.config.ConfigurationFileError('Configuration file missing ElasticSync configuration.')
             self._register_task(ElasticSync(self.queue, interval, app_config['elastic-sync']['service_urls']))
 
-        def register_usn_listener():
+        def register_iot_layer():
             pass
 
         try:
             app_config: dict = parse_config_file('/opt/ew-link.config')
             register_ocpp_server()
             register_db_sync()
-            register_usn_listener()
+            register_iot_layer()
             register_origin()
         except energyweb.config.ConfigurationFileError as e:
             print(f'Error in configuration file: {e.with_traceback(e.__traceback__)}')

@@ -60,7 +60,7 @@ class Ocpp16Server:
     def _error_handler(self, text, e):
         print(f'{text}{e.with_traceback(e.__traceback__)}')
 
-    def get_server_future(self, host: str, port: int):
+    def get_server_future(self, host: str, port: int) -> asyncio.Future:
 
         clients_connected = set()
 

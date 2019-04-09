@@ -23,22 +23,29 @@ class ElasticSearchDAO(dao.DAO):
         es_logger.setLevel(logging.ERROR)
 
     def create(self, obj: dao.Model):
-        response = self._db.index(index=self._index, doc_type=self._doc_type, body=obj.to_dict(), id=obj.reg_id,
-                                  refresh=True)
-        if not response['result'] in ('created', 'updated'):
+        res = self._db.index(index=self._index, doc_type=self._doc_type, body=obj.to_dict(), id=obj.reg_id,
+                             refresh=True)
+        if not res['result'] in ('created', 'updated'):
             raise es.ElasticsearchException('Fail creating or updating the object in the database')
 
     def retrieve(self, _id):
         self._db.indices.refresh(self._index)
-        response = self._db.get(self._index, self._doc_type, id=_id)
-        if not response['found']:
+        res = self._db.get(self._index, self._doc_type, id=_id)
+        if not res['found']:
             raise es.ElasticsearchException('Object not found.')
-        return self._cls.from_dict(response['_source'])
+        obj = self._cls.from_dict(res['_source'])
+        obj.reg_id = res['_id']
+        return obj
 
     def retrieve_all(self):
         self._db.indices.refresh(self._index)
-        response = self._db.search(self._index, self._doc_type, body={"query": {"match_all": {}}})
-        return [self._cls.from_dict(hit["_source"]) for hit in response['hits']['hits']]
+        res = self._db.search(self._index, self._doc_type, body={"query": {"match_all": {}}})
+        objs = []
+        for hit in res['hits']['hits']:
+            obj = self._cls.from_dict(hit['_source'])
+            obj.reg_id = hit['_id']
+            objs.append(obj)
+        return objs
 
     def update(self, obj: dao.Model):
         self.create(obj)
@@ -52,7 +59,12 @@ class ElasticSearchDAO(dao.DAO):
         self._db.indices.refresh(self._index)
         query = {"query": {"bool": {"must": [{"match": {k: attributes[k]}} for k in attributes]}}}
         res = self._db.search(self._index, self._doc_type, body=query)
-        return [self._cls.from_dict(hit["_source"]) for hit in res['hits']['hits']]
+        objs = []
+        for hit in res['hits']['hits']:
+            obj = self._cls.from_dict(hit['_source'])
+            obj.reg_id = hit['_id']
+            objs.append(obj)
+        return objs
 
     def delete_all(self):
         self._db.delete_by_query(self._index, doc_type=self._doc_type, body={"query": {"match_all": {}}})
@@ -67,7 +79,12 @@ class ElasticSearchDAO(dao.DAO):
         """
         self._db.indices.refresh(self._index)
         res = self._db.search(self._index, self._doc_type, body={"query": query})
-        return [self._cls.from_dict(hit["_source"]) for hit in res['hits']['hits']]
+        objs = []
+        for hit in res['hits']['hits']:
+            obj = self._cls.from_dict(hit['_source'])
+            obj.reg_id = hit['_id']
+            objs.append(obj)
+        return objs
 
 
 class ElasticSearchDAOFactory(dao.DAOFactory):
