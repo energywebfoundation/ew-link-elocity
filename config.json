@@ -1,30 +1,9 @@
 {
  "consumers": [
-  {
-   "energy-meter": {
-    "module": "energyweb.eds.energy_api",
-    "class_name": "BondAPIv1TestDevice3",
-    "class_parameters": {
-     "base_url": "base_url",
-     "source": "produced",
-     "device_id": 0
-    }
-   },
-   "smart-contract": {
-    "module": "energyweb.smart_contract.origin_v1",
-    "class_name": "OriginConsumer",
-    "class_parameters": {
-     "asset_id": 3,
-     "wallet_add": "0x68F89f072A37c9571733E899EFF7219a03d51bb0",
-     "wallet_pwd": "f97120b63afc4a6c622a4131687ac6d3ef068590beec04276a3d13bc4148c12b",
-     "client_url": "https://rpc.slock.it/tobalaba"
-    }
-   },
-   "name": "Shell_Consumer_Asset_3"
-  }
  ],
  "producers": [
   {
+   "name": "ChargingPoint0901454d4800007340d2",
    "energy-meter": {
     "module": "tasks.chargepoint",
     "class_name": "EVchargerEnergyMeter",
@@ -32,7 +11,7 @@
      "service_urls": ["http://127.0.0.1:9200", "http://0.0.0.0:9200"],
       "manufacturer":"Ebee",
       "model":"EV-Charge Point Energy Meter",
-      "serial_number":"1702502754/B94060001",
+      "serial_number":"10901454d4800007340d2",
       "energy_unit":"WATT_HOUR",
       "is_accumulated": false,
       "connector_id": 0
@@ -57,8 +36,7 @@
      "wallet_pwd": "1b17e7cb5879a18fb6c9e7aee03a66841f2aa10102bd537752ecbdb5b6252d2f",
      "client_url": "https://rpc.slock.it/tobalaba"
     }
-   },
-   "name": "Shell_Producer_Asset_1"
+   }
   }
  ],
  "ocpp16-server": {
@@ -67,5 +45,10 @@
  },
  "elastic-sync": {
   "service_urls": ["http://10.10.1.167:9200", "http://0.0.0.0:9200"]
+ },
+ "iot-layer": {
+  "client_url": "https://rpc.slock.it/tobalaba",
+  "wallet_add": "0x16bC9F8a9bE6296F3D4C87Dcd866726593662B3f",
+  "wallet_pwd": "0x54f4f12baa6d986e052420e5c1e69274475e73cd450acaafb97cbc53094887cf"
  }
 }

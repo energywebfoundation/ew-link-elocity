@@ -23,7 +23,38 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
         energyweb.Logger.__init__(self, log_name=task_config.name, store=store, enable_debug=enable_debug)
         energyweb.Task.__init__(self, queue=queue, polling_interval=polling_interval, eager=False, run_forever=True)
 
-    def _log_measured_energy(self):
+    def _transform(self, local_file_hash: str):
+        """
+        Transforms the raw external energy data into blockchain format. Needs to be implemented for each different
+        smart-contract and configuration type.
+        """
+        raise NotImplementedError
+
+    def _fetch_remote_data(self, ip: energyweb.IntegrationPoint) -> (energyweb.ExternalData, bool):
+        """
+        Tries to reach external device for data.
+        Returns smart-contract friendly data and logs error in case of failing.
+        :param ip: Energy or Carbon Emission Device
+        :return: Energy or Carbon Emission Data, Is device offline flag
+        """
+        try:
+            result = ip.read_state()
+            if not issubclass(result.__class__, energyweb.ExternalData):
+                raise AssertionError('Make sure to inherit ExternalData when reading data from IntegrationPoint.')
+            return result, False
+        except Exception as e:
+            return None, True
+
+    async def _prepare(self):
+        """
+        Outputs the logger configuration
+        """
+        message = 'Origin loaded asset name: %s - meter: %s'
+        if self.store and self.enable_debug:
+            self.console.info('Origin path to logs: %s', self.store)
+        self.console.info(message, self.task_config.name, self.task_config.energy_meter.__class__.__name__)
+
+    async def _main(self):
         """
         Try to reach the energy_meter and logs the measured energy.
         Wraps the complexity of the data read and the one to be written to the smart-contract
@@ -50,41 +81,6 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
             self.console.warning('Not minted, Smart-contract is unreachable.')
         except Exception as e:
             self._handle_exception(e)
-
-    def _transform(self, local_file_hash: str):
-        """
-        Transforms the raw external energy data into blockchain format. Needs to be implemented for each different
-        smart-contract and configuration type.
-        """
-        raise NotImplementedError
-
-    def _fetch_remote_data(self, ip: energyweb.IntegrationPoint) -> (energyweb.ExternalData, bool):
-        """
-        Tries to reach external device for data.
-        Returns smart-contract friendly data and logs error in case of failing.
-        :param ip: Energy or Carbon Emission Device
-        :return: Energy or Carbon Emission Data, Is device offline flag
-        """
-        try:
-            result = ip.read_state()
-            if not issubclass(result.__class__, energyweb.ExternalData):
-                raise AssertionError('Make sure to inherit ExternalData when reading data from IntegrationPoint.')
-            return result, False
-        except Exception as e:
-            self._handle_exception(e)
-            return None, True
-
-    async def _prepare(self):
-        """
-        Outputs the logger configuration
-        """
-        message = '[CONFIG] name: %s - energy energy_meter: %s'
-        if self.store and self.enable_debug:
-            self.console.info('[CONFIG] path to logs: %s', self.store)
-        self.console.info(message, self.task_config.name, self.task_config.energy_meter.__class__.__name__)
-
-    async def _main(self, duration: int = 3):
-        self._log_measured_energy()
 
     async def _finish(self):
         pass
@@ -114,13 +110,15 @@ class CooProducerTask(CooGeneralTask):
         smart-contract and configuration type.
         """
         raw_energy, is_meter_down = self._fetch_remote_data(self.task_config.energy_meter)
-        if not self.task_config.energy_meter.is_accumulated:
+        if not is_meter_down and not self.task_config.energy_meter.is_accumulated:
             last_remote_state = self.task_config.smart_contract.last_state()
             raw_energy.energy += last_remote_state[3] # get the fourth element returned from the contract from last_state: uint _lastSmartMeterReadWh
         raw_carbon_emitted, is_co2_down = self._fetch_remote_data(self.task_config.carbon_emission)
-        calculated_co2 = raw_energy.energy * raw_carbon_emitted.accumulated_co2
+        energy = raw_energy.energy if raw_energy else 0
+        accumulated_co2 = raw_carbon_emitted.accumulated_co2 if raw_carbon_emitted else 0
+        calculated_co2 = energy * accumulated_co2
         produced = {
-            'value': int(raw_energy.energy),
+            'value': int(energy),
             'is_meter_down': is_meter_down,
             'previous_hash': local_file_hash,
             'co2_saved': int(calculated_co2),
@@ -149,11 +147,12 @@ class CooConsumerTask(CooGeneralTask):
         smart-contract and configuration type.
         """
         raw_energy, is_meter_down = self._fetch_remote_data(self.task_config.energy_meter)
-        if not self.task_config.energy_meter.is_accumulated:
+        if not is_meter_down and not self.task_config.energy_meter.is_accumulated:
             last_remote_state = self.task_config.smart_contract.last_state()
             raw_energy.energy += last_remote_state[3]
+        energy = raw_energy.energy if raw_energy else 0
         consumed = {
-            'value': int(raw_energy.energy),
+            'value': int(energy),
             'is_meter_down': is_meter_down,
             'previous_hash': local_file_hash,
         }

@@ -60,7 +60,7 @@ class Ocpp16Server:
     def _error_handler(self, text, e):
         print(f'{text}{e.with_traceback(e.__traceback__)}')
 
-    def get_server_future(self, host: str, port: int) -> asyncio.Future:
+    def get_server(self, host: str, port: int) -> websockets.serve:
 
         clients_connected = set()
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
         QUEUE = {'ev_charger_command': asyncio.Queue(maxsize=10),
                  'ev_chargers_available': asyncio.Queue(maxsize=5)}
         server_cls = Ocpp16Server(FACTORY, QUEUE)
-        future = server_cls.get_server_future(IP, PORT)
+        future = server_cls.get_server(IP, PORT)
         print(f'Server started at http://{IP}:{PORT}.')
         asyncio.get_event_loop().run_until_complete(future)
         # asyncio.get_event_loop().run_until_complete(command(QUEUE))

@@ -29,6 +29,8 @@ class EVchargerEnergyMeter(energyweb.EnergyDevice):
                      {"match": {"connector_id": self.connector_id}}]
         }})
         now = datetime.datetime.now().astimezone()
+        if len(results) < 1:
+            raise AssertionError('No new transactions.')
         results.sort(key=lambda cs: cs.time_start, reverse=True)
         tx: Ocpp16.Transaction = results.pop()
         tx.co2_saved = int(tx.meter_stop) - int(tx.meter_start)
@@ -72,14 +74,17 @@ class Ocpp16ServerTask(energyweb.Task, energyweb.Logger):
     async def _prepare(self):
         if not {'ev_charger_command', 'ev_chargers_available'}.issubset(self._queue.keys()):
             raise AssertionError("Please register queues 'ev_charger_command' and 'ev_chargers_available' on the app.")
-        server = self.Ocpp16ServerLogger(self._factory, self._queue, self.console)
-        self._future = server.get_server_future(*self.server_address)
         self.console.info(f'Server running on http://{self.server_address[0]}:{self.server_address[1]}')
 
     def _handle_exception(self, e: Exception):
         self.console.error(f'Ocpp16 Server failed because {e.with_traceback(e.__traceback__)}')
 
     async def _main(self):
+        self.console.critical('PENIS')
+        if self._future:
+            self._future
+        server = self.Ocpp16ServerLogger(self._factory, self._queue, self.console)
+        self._future = asyncio.ensure_future(server.get_server(*self.server_address))
         await self._future
 
     async def _finish(self):

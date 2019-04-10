@@ -164,7 +164,7 @@ class Ocpp16:
                 self._answer(request, {'currentTime': datetime.datetime.utcnow().isoformat()})
                 return
             elif request.typ == 'BootNotification':
-                self._handle_charging_station(request.body['chargeBoxSerialNumber'], metadata=request.body)
+                self._handle_charging_station(request.body['meterSerialNumber'], metadata=request.body)
                 self._answer(request, {'status': 'Accepted', 'currentTime': datetime.datetime.utcnow().isoformat(),
                                        'interval': 14400})
                 return

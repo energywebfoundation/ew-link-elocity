@@ -7,7 +7,7 @@ import energyweb
 from tasks.database.memorydao import MemoryDAOFactory
 from tasks.origin import CooProducerTask, CooConsumerTask
 from tasks.chargepoint import Ocpp16ServerTask
-from tasks.dbsync import ElasticSync
+from tasks.dbsync import ElasticSyncTask
 
 
 class MyApp(energyweb.dispatcher.App):
@@ -49,7 +49,7 @@ class MyApp(energyweb.dispatcher.App):
             if 'elastic-sync' not in app_config \
                     or not {'service_urls'}.issubset(dict(app_config['elastic-sync']).keys()):
                 raise energyweb.config.ConfigurationFileError('Configuration file missing ElasticSync configuration.')
-            self._register_task(ElasticSync(self.queue, interval, app_config['elastic-sync']['service_urls']))
+            self._register_task(ElasticSyncTask(self.queue, interval, app_config['elastic-sync']['service_urls']))
 
         def register_iot_layer():
             pass

@@ -8,7 +8,7 @@ from tasks.database.memorydao import MemoryDAO, MemoryDAOFactory
 from tasks.ocpp16.protocol import ChargingStation
 
 
-class ElasticSync(energyweb.Task, energyweb.Logger):
+class ElasticSyncTask(energyweb.Task, energyweb.Logger):
 
     def __init__(self, queue: dict, interval: datetime.timedelta, service_urls: tuple):
         self.service_urls = service_urls
