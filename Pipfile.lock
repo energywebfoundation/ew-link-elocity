@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "deb2c65f1b8216edfaa77a7df493590b9ccc3afa2494d1d1067c00a736af6f6b"
+            "sha256": "252d2d603675baab3d9dca9c4c8db5f5ce37fe2758e9918e71a4d711bc74788c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -68,19 +68,19 @@
         },
         "elasticsearch": {
             "hashes": [
-                "sha256:7546cc08e3899716e12fe67d12d7cfe9a64647014d1134b014c3c392b63cad42",
-                "sha256:aada5cfdc4a543c47098eb3aca6663848ef5d04b4324935ced441debc11ec98b"
+                "sha256:c621f2272bb2f000d228dc7016d058a1f90f15babdc938240b9f2d13690222db",
+                "sha256:cf6cf834b6d0172dac5e704c398a11d1917cf61f15d32b79b1ddad4cd673c4b1"
             ],
             "index": "pypi",
-            "version": "==6.3.1"
+            "version": "==7.0.0"
         },
         "energyweb": {
             "hashes": [
-                "sha256:2323ff5aad3dc1c84da9dada8f06a0d0dd1ec2f636ed3beab523c5037a908967",
-                "sha256:94a0b45015bd09fd3796c60b7faf1772f0488b8c58db61f05d66539b31af22d2"
+                "sha256:00212d47cefe648c1df4f16f5c14bfaf675b908d565bb070b431c065d0e2561f",
+                "sha256:67d6b18410eb70bd2fe7ba6ec494af34795f441100665ad0fe84e6d69c8f971c"
             ],
             "index": "pypi",
-            "version": "==0.4.2"
+            "version": "==0.4.4"
         },
         "eth-abi": {
             "hashes": [

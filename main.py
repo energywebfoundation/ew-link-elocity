@@ -1,9 +1,11 @@
 import datetime
 import json
 import os
+import time
 
 import energyweb
 
+from tasks.configapi import ConfigApi
 from tasks.database.memorydao import MemoryDAOFactory
 from tasks.origin import CooProducerTask, CooConsumerTask
 from tasks.chargepoint import Ocpp16ServerTask
@@ -54,8 +56,30 @@ class MyApp(energyweb.dispatcher.App):
         def register_iot_layer():
             pass
 
+        def register_config_api():
+            interval = datetime.timedelta(minutes=1)
+            self._register_task(ConfigApi(self.queue, interval))
+
         try:
-            app_config: dict = parse_config_file('/opt/slockit/configs/ew-link.config')
+            register_config_api()
+        except Exception as e:
+            print(f'Fatal error: {e}')
+            self.loop.close()
+
+        config_path = '/opt/slockit/configs/ew-link.config'
+
+        try:
+            while not os.path.exists(config_path):
+                time.sleep(3)
+        except KeyboardInterrupt:
+            self.loop.close()
+            quit()
+        except Exception as e:
+            self.loop.close()
+            quit()
+
+        try:
+            app_config: dict = parse_config_file(config_path)
             register_ocpp_server()
             register_db_sync()
             register_iot_layer()
