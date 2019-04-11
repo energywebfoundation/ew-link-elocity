@@ -55,7 +55,7 @@ class MyApp(energyweb.dispatcher.App):
             pass
 
         try:
-            app_config: dict = parse_config_file('/opt/ew-link.config')
+            app_config: dict = parse_config_file('/opt/slockit/configs/ew-link.config')
             register_ocpp_server()
             register_db_sync()
             register_iot_layer()

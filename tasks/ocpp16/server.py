@@ -117,7 +117,7 @@ class Ocpp16Server:
 
                 # notify_available_charging_stations
                 cs_dao = self._factory.get_instance(ChargingStation)
-                stations = {cs.reg_id for cs in cs_dao.retrieve_all()}
+                stations = {cs.serial_numeber: cs.reg_id for cs in cs_dao.retrieve_all() if cs.serial_numeber}
                 await self._queue['ev_chargers_available'].put(stations)
 
             except asyncio.CancelledError:
@@ -178,7 +178,7 @@ async def command(queue: dict):
     cs_ids = {}
     while not queue['ev_chargers_available'].empty():
         cs_ids = get_cs_ids()
-    for cs_id in cs_ids:
+    for cs_id in cs_ids.values():
         await unlock(cs_id)
         await asyncio.sleep(10)
         await start(cs_id)
