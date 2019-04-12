@@ -8,7 +8,7 @@ from tasks.ocpp16.protocol import ChargingStation
 
 class ElasticSearchDAO(dao.DAO):
 
-    def __init__(self, id_att_name: str, cls: dao.Model, *service_urls: str):
+    def __init__(self, id_att_name: str, cls, *service_urls: str):
         """
         :param id_att_name: Class id attribute name
         :param cls: Class to instantiate

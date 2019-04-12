@@ -66,16 +66,16 @@ class Ocpp16Server:
 
         async def outgoing(websocket, path):
             """ Send Messages from all charging stations queues """
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
             try:
                 for msg in self._aggregator():
                     await websocket.send(json.dumps(msg.serialize()))
                     self._message_handler(msg)
 
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e1:
                 pass
-            except Exception as e:
-                self._error_handler('Error in delegating outgoing messages: ', e)
+            except Exception as e2:
+                self._error_handler('Error in delegating outgoing messages: ', e2)
 
         async def wait_command():
             """ check_command_messages """
@@ -95,10 +95,10 @@ class Ocpp16Server:
                     cs_id, method, kwargs = self._queue['ev_charger_command'].get_nowait()
                     execute(cs_id, method, kwargs)
 
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e1:
                 pass
-            except Exception as e:
-                self._error_handler('Error processing command messages: ', e)
+            except Exception as e2:
+                self._error_handler('Error processing command messages: ', e2)
 
         async def incoming(websocket, path):
             """ Listen to new messages and dispatch them """
@@ -120,10 +120,10 @@ class Ocpp16Server:
                 stations = {cs.serial_number: cs.reg_id for cs in cs_dao.retrieve_all() if cs.serial_number}
                 await self._queue['ev_chargers_available'].put(stations)
 
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e1:
                 pass
-            except Exception as e:
-                self._error_handler("Error in processing incoming messages: ", e)
+            except Exception as e2:
+                self._error_handler("Error in processing incoming messages: ", e2)
 
         async def router(websocket, path):
             """ Route the messages to the different clients connected"""

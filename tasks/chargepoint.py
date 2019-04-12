@@ -5,7 +5,7 @@ import datetime
 import energyweb
 
 from tasks.database.dao import DAOFactory
-from tasks.database.elasticdao import ElasticSearchDAOFactory, ElasticSearchDAO
+from tasks.database.elasticdao import ElasticSearchDAO
 from tasks.ocpp16.protocol import ChargingStation, Ocpp16
 from tasks.ocpp16.server import Ocpp16Server
 
@@ -19,8 +19,7 @@ class EVchargerEnergyMeter(energyweb.EnergyDevice):
         super().__init__(manufacturer, model, serial_number, energy_unit, is_accumulated, latitude, longitude)
 
     def read_state(self, *args, **kwargs) -> energyweb.EnergyData:
-        els_tx_dao: ElasticSearchDAO = ElasticSearchDAOFactory('transactions', *self.service_urls).\
-            get_instance(ChargingStation.Transaction)
+        els_tx_dao = ElasticSearchDAO('transactions', ChargingStation.Transaction, *self.service_urls)
         results = els_tx_dao.query({"bool": {
             "must_not": {"exists": {"field": 'co2_saved'}},
             "must": [{"exists": {"field": 'meter_start'}},

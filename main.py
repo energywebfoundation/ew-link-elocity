@@ -6,10 +6,10 @@ import time
 import energyweb
 
 from tasks.database.memorydao import MemoryDAOFactory
-from tasks.dblisten import DbListenTask
+from tasks.ellisten import DbListenTask
 from tasks.origin import CooProducerTask, CooConsumerTask
 from tasks.chargepoint import Ocpp16ServerTask
-from tasks.dbsync import ElasticSyncTask
+from tasks.elsync import ElasticSyncTask
 
 
 class MyApp(energyweb.dispatcher.App):
@@ -38,7 +38,7 @@ class MyApp(energyweb.dispatcher.App):
             self._register_task(Ocpp16ServerTask(self.queue, MemoryDAOFactory(), interval, host, port))
 
         def register_origin():
-            interval = datetime.timedelta(minutes=2)
+            interval = datetime.timedelta(minutes=6)
             origin_config: energyweb.config.CooV1Configuration = energyweb.config.parse_coo_v1(app_config)
             for producer in origin_config.production:
                 self._register_task(CooProducerTask(producer, interval, self.queue, store='/tmp/origin/produce'))
