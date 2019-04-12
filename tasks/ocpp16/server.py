@@ -91,7 +91,7 @@ class Ocpp16Server:
 
                 cs_id, method, kwargs = await self._queue['ev_charger_command'].get()
                 execute(cs_id, method, kwargs)
-                while not self._queue['ev_charger_command'].empty():
+                while self._queue['ev_charger_command'].empty():
                     cs_id, method, kwargs = self._queue['ev_charger_command'].get_nowait()
                     execute(cs_id, method, kwargs)
 

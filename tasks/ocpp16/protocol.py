@@ -177,12 +177,12 @@ class Ocpp16:
                     self._answer(request, {'idTagInfo': {'status': 'Rejected'}})
             elif request.typ == 'StatusNotification':
                 self._answer(request, {})
-                self._handle_connector(number=request.body['connectorId'], last_status=request.body['info'])
+                self._handle_connector(number=request.body['connectorId'], last_status=request.body['status'])
             elif request.typ == 'MeterValues':
                 self._answer(request, {})
                 for value in request.body['meterValue']:
                     for sample in value['sampledValue']:
-                        self._handle_connector(number=request.body['connectorId'], last_status=request.body['info'],
+                        self._handle_connector(number=request.body['connectorId'], last_status=request.body['status'],
                                                meter_read=sample['value'], meter_unit=sample['unit'])
                         break
                     break

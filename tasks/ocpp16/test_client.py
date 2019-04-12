@@ -7,9 +7,9 @@ import json
 
 import websockets
 
-IP = '0.0.0.0'
+# IP = '0.0.0.0'
 # IP = 'localhost'
-# IP = '192.168.123.220'
+IP = '192.168.123.220'
 # PORT = 80
 PORT = 8080
 

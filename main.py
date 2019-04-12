@@ -6,6 +6,7 @@ import time
 import energyweb
 
 from tasks.database.memorydao import MemoryDAOFactory
+from tasks.dblisten import DbListenTask
 from tasks.origin import CooProducerTask, CooConsumerTask
 from tasks.chargepoint import Ocpp16ServerTask
 from tasks.dbsync import ElasticSyncTask
@@ -54,6 +55,13 @@ class MyApp(energyweb.dispatcher.App):
         def register_iot_layer():
             pass
 
+        def register_db_listener():
+            interval = datetime.timedelta(seconds=5)
+            if 'elastic-sync' not in app_config \
+                    or not {'service_urls'}.issubset(dict(app_config['elastic-sync']).keys()):
+                raise energyweb.config.ConfigurationFileError('Configuration file missing ElasticSync configuration.')
+            self._register_task(DbListenTask(self.queue, interval, app_config['elastic-sync']['service_urls']))
+
         config_path = '/opt/elocity/ew-link.config'
 
         try:
@@ -72,6 +80,7 @@ class MyApp(energyweb.dispatcher.App):
             register_ocpp_server()
             register_db_sync()
             register_iot_layer()
+            register_db_listener()
             register_origin()
         except energyweb.config.ConfigurationFileError as e:
             print(f'Error in configuration file: {e.with_traceback(e.__traceback__)}\nExiting.')

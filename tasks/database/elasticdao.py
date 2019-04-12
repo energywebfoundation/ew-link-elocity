@@ -78,7 +78,7 @@ class ElasticSearchDAO(dao.DAO):
         :return: dict
         """
         self._db.indices.refresh(self._index)
-        res = self._db.search(self._index, self._doc_type, body={"query": query})
+        res = self._db.search(self._index, body={"query": query})
         objs = []
         for hit in res['hits']['hits']:
             obj = self._cls.from_dict(hit['_source'])
