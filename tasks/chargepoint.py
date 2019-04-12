@@ -80,12 +80,10 @@ class Ocpp16ServerTask(energyweb.Task, energyweb.Logger):
         self.console.error(f'Ocpp16 Server failed because {e.with_traceback(e.__traceback__)}')
 
     async def _main(self):
-        self.console.critical('PENIS')
-        if self._future:
-            self._future
-        server = self.Ocpp16ServerLogger(self._factory, self._queue, self.console)
-        self._future = asyncio.ensure_future(server.get_server(*self.server_address))
-        await self._future
+        if not self._future or not self._future.done():
+            server = self.Ocpp16ServerLogger(self._factory, self._queue, self.console)
+            self._future = asyncio.ensure_future(server.get_server(*self.server_address))
+            await self._future
 
     async def _finish(self):
         try:

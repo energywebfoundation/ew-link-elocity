@@ -63,7 +63,7 @@ class CooGeneralTask(energyweb.Logger, energyweb.Task):
             # Get the data by accessing the external energy device
             # Storing logs locally
             if self.store:
-                local_storage = energyweb.DiskStorage(path_to_files=self.store,
+                local_storage = energyweb.OnDiskChain(path_to_files=self.store,
                                                       chain_file_name=self.chain_file_name)
                 last_file_hash = local_storage.get_last_hash()
                 energy_data = self._transform(local_file_hash=last_file_hash)
@@ -124,7 +124,7 @@ class CooProducerTask(CooGeneralTask):
             'co2_saved': int(calculated_co2),
             'is_co2_down': is_co2_down
         }
-        return energyweb.ProducedEnergy(**produced)
+        return energyweb.origin.ProducedEnergy(**produced)
 
 
 class CooConsumerTask(CooGeneralTask):
@@ -156,4 +156,4 @@ class CooConsumerTask(CooGeneralTask):
             'is_meter_down': is_meter_down,
             'previous_hash': local_file_hash,
         }
-        return energyweb.ConsumedEnergy(**consumed)
+        return energyweb.origin.ConsumedEnergy(**consumed)

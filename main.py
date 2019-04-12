@@ -5,7 +5,6 @@ import time
 
 import energyweb
 
-from tasks.configapi import ConfigApi
 from tasks.database.memorydao import MemoryDAOFactory
 from tasks.origin import CooProducerTask, CooConsumerTask
 from tasks.chargepoint import Ocpp16ServerTask
@@ -15,8 +14,7 @@ from tasks.dbsync import ElasticSyncTask
 class MyApp(energyweb.dispatcher.App):
 
     def _handle_exception(self, e: Exception):
-        print('==== APP ERROR ====')
-        print(f'{e.with_traceback(e.__traceback__)}')
+        print(f'App failed because {e.with_traceback(e.__traceback__)}\nExiting.')
 
     def _configure(self):
 
@@ -56,20 +54,11 @@ class MyApp(energyweb.dispatcher.App):
         def register_iot_layer():
             pass
 
-        def register_config_api():
-            interval = datetime.timedelta(minutes=1)
-            self._register_task(ConfigApi(self.queue, interval))
-
-        try:
-            register_config_api()
-        except Exception as e:
-            print(f'Fatal error: {e}')
-            self.loop.close()
-
-        config_path = '/opt/slockit/configs/ew-link.config'
+        config_path = '/opt/elocity/ew-link.config'
 
         try:
             while not os.path.exists(config_path):
+                print(f'App is waiting for config file')
                 time.sleep(3)
         except KeyboardInterrupt:
             self.loop.close()
@@ -85,10 +74,10 @@ class MyApp(energyweb.dispatcher.App):
             register_iot_layer()
             register_origin()
         except energyweb.config.ConfigurationFileError as e:
-            print(f'Error in configuration file: {e.with_traceback(e.__traceback__)}')
+            print(f'Error in configuration file: {e.with_traceback(e.__traceback__)}\nExiting.')
             self.loop.close()
         except Exception as e:
-            print(f'Fatal error: {e}')
+            self._handle_exception(e)
             self.loop.close()
 
     def _clean_up(self):
