@@ -13,9 +13,9 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
 
     def __init__(self, queue: dict, interval: datetime.timedelta):
         self.server = None
-        self.host = "127.0.0.1"
+        self.host = "0.0.0.0"
         self.port = 8000
-        self.path = '/opt/slockit/configs'
+        self.path = '/opt/elocity'
         energyweb.Task.__init__(self, queue=queue, polling_interval=interval, eager=True, run_forever=True)
         energyweb.Logger.__init__(self, self.__class__.__name__)
 
@@ -28,14 +28,18 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
 
         @app.post("/config")
         async def post_config(request: Request):
-            file_name = 'ew-link.config'
-            if not os.path.exists(self.path):
-                os.makedirs(self.path)
-            path = os.path.join(self.path, file_name)
-            with open(path, 'w+') as file:
-                json.dump(request.json, file)
-            return response({'message': 'file successfully saved. restart device to apply changes.', 'path': f'{path}'})
-
+            try:
+                file_name = 'ew-link.config'
+                if not os.path.exists(self.path):
+                    os.makedirs(self.path)
+                path = os.path.join(self.path, file_name)
+                with open(path, 'w+') as file:
+                    json.dump(request.json, file)
+                return response({'message': 'file successfully saved. restart device to apply changes.',
+                                 'path': f'{path}'})
+            except Exception as e:
+                return response({'message': f'file not saved because {e.with_traceback(e.__traceback__)}'},
+                                status=500)
         try:
             self.console.debug(f'Config api available http://{self.host}:{self.port}')
             self.server = app.create_server(host=self.host, port=self.port, return_asyncio_server=True)
