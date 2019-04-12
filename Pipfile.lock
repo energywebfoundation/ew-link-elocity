@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "252d2d603675baab3d9dca9c4c8db5f5ce37fe2758e9918e71a4d711bc74788c"
+            "sha256": "2f8db0558eecccf8b075d88fa5da50c5a790fe41118b4f13dd57a6e6cb631c7b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -65,14 +65,6 @@
             ],
             "markers": "implementation_name == 'cpython'",
             "version": "==0.9.0.1"
-        },
-        "elasticsearch": {
-            "hashes": [
-                "sha256:c621f2272bb2f000d228dc7016d058a1f90f15babdc938240b9f2d13690222db",
-                "sha256:cf6cf834b6d0172dac5e704c398a11d1917cf61f15d32b79b1ddad4cd673c4b1"
-            ],
-            "index": "pypi",
-            "version": "==7.0.0"
         },
         "energyweb": {
             "hashes": [
@@ -310,7 +302,6 @@
                 "sha256:3dd3f09cd602890ef3475f1a7332ed64fe7384dd6bd03257157326f37e3c6f67",
                 "sha256:bb54c52c73bd5aadda94ab0e486de2aba701cc550ef55d5aa2fe7e562069e14d"
             ],
-            "index": "pypi",
             "version": "==4.9.1"
         },
         "websockets": {
@@ -337,7 +328,6 @@
                 "sha256:ee55eb6bcf23ecc975e6b47c127c201b913598f38b6a300075f84eeef2d3baff",
                 "sha256:f1414e6cbcea8d22843e7eafdfdfae3dd1aba41d1945f6ca66e4806c07c4f454"
             ],
-            "index": "pypi",
             "version": "==6.0"
         }
     },

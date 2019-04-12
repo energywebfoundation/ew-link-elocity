@@ -16,11 +16,11 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
         self.host = "127.0.0.1"
         self.port = 8000
         self.path = '/opt/slockit/configs'
-        energyweb.Task.__init__(self, queue=queue, polling_interval=interval, eager=False, run_forever=True)
+        energyweb.Task.__init__(self, queue=queue, polling_interval=interval, eager=True, run_forever=True)
         energyweb.Logger.__init__(self, self.__class__.__name__)
 
     async def _prepare(self):
-        self.console.debug('Config api running')
+        self.console.debug('Config api loaded')
 
     async def _main(self, *args):
 
@@ -28,7 +28,6 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
 
         @app.post("/config")
         async def post_config(request: Request):
-            self.path = '/opt/slockit/configs'
             file_name = 'ew-link.config'
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
@@ -38,6 +37,7 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
             return response({'message': 'file successfully saved. restart device to apply changes.', 'path': f'{path}'})
 
         try:
+            self.console.debug(f'Config api available http://{self.host}:{self.port}')
             self.server = app.create_server(host=self.host, port=self.port, return_asyncio_server=True)
             await self.server
         except KeyboardInterrupt:
