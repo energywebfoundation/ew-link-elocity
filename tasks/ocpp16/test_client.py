@@ -7,11 +7,11 @@ import json
 
 import websockets
 
-# IP = '0.0.0.0'
+# IP = '192.168.123.220'
+IP = '0.0.0.0'
 # IP = 'localhost'
-IP = '192.168.123.220'
-# PORT = 80
 PORT = 8080
+# PORT = 80
 
 boot_notification = [2, '52325482', 'BootNotification',
                      {
@@ -117,6 +117,12 @@ async def hello():
         print(f"> {stop_transaction}")
         status_ack = await websocket.recv()
         print(f"<< {status_ack}")
+
+        msg = json.loads(await websocket.recv())
+        print(f"<< {msg}")
+
+        msg = json.loads(await websocket.recv())
+        print(f"<< {msg}")
 
         msg = json.loads(await websocket.recv())
         print(f"<< {msg}")

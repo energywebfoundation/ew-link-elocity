@@ -74,7 +74,7 @@ class DbListenTask(energyweb.Task, energyweb.Logger):
                     cmd_dao.delete(cmd)
 
         except elasticsearch.ElasticsearchException as e1:
-            self._handle_exception(e1)
+            pass
         except Exception as e2:
             self._handle_exception(e2)
 

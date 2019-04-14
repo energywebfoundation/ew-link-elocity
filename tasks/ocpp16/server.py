@@ -72,10 +72,10 @@ class Ocpp16Server:
                     await websocket.send(json.dumps(msg.serialize()))
                     self._message_handler(msg)
 
-            except asyncio.CancelledError as e1:
+            except asyncio.CancelledError:
                 pass
-            except Exception as e2:
-                self._error_handler('Error in delegating outgoing messages: ', e2)
+            except Exception as e:
+                self._error_handler('Error in delegating outgoing messages: ', e)
 
         async def wait_command():
             """ check_command_messages """
@@ -91,14 +91,11 @@ class Ocpp16Server:
 
                 cs_id, method, kwargs = await self._queue['ev_charger_command'].get()
                 execute(cs_id, method, kwargs)
-                while self._queue['ev_charger_command'].empty():
-                    cs_id, method, kwargs = self._queue['ev_charger_command'].get_nowait()
-                    execute(cs_id, method, kwargs)
 
-            except asyncio.CancelledError as e1:
+            except asyncio.CancelledError:
                 pass
-            except Exception as e2:
-                self._error_handler('Error processing command messages: ', e2)
+            except Exception as e:
+                self._error_handler('Error processing command messages: ', e)
 
         async def incoming(websocket, path):
             """ Listen to new messages and dispatch them """
@@ -120,10 +117,10 @@ class Ocpp16Server:
                 stations = {cs.serial_number: cs.reg_id for cs in cs_dao.retrieve_all() if cs.serial_number}
                 await self._queue['ev_chargers_available'].put(stations)
 
-            except asyncio.CancelledError as e1:
+            except asyncio.CancelledError:
                 pass
-            except Exception as e2:
-                self._error_handler("Error in processing incoming messages: ", e2)
+            except Exception as e:
+                self._error_handler("Error in processing incoming messages: ", e)
 
         async def router(websocket, path):
             """ Route the messages to the different clients connected"""
