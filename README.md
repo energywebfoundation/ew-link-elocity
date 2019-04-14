@@ -24,5 +24,9 @@ Service ports are specified on `ew-link.config`, be sure to specify ports with `
 This method is architecture agnostic as long as Alpine and Python images are available to target.
 ```bash
 ./docker_build.sh
-./docker_run.sh ew-link-elocity-alpine 80 8080
+./docker_run.sh 80 8080
+git fetch
+git checkout config-api
+./docker_build.sh
+./docker_run.sh 81
 ```
