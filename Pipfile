@@ -6,7 +6,6 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-energyweb = "==0.4.4"\
 sanic = "*"
 
 [requires]
