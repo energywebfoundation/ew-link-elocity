@@ -14,13 +14,15 @@ Service ports are specified on `ew-link.config`, be sure to specify ports with `
 
 `docker run -v /etc:/etc slockit\ew-link-elocity:v1-x64`
 
+### Raspberry Pi 2, 3+
+
+`docker run -p 80:9069 -v /etc:/etc slockit\ew-link-config-api:v1-ARM32v7`
+
+`docker run -v /etc:/etc slockit\ew-link-elocity:v1-ARM32v7`
 
 ## Build and run local Docker containers
+This method is architecture agnostic as long as Alpine and Python images are available to target.
 ```bash
 ./docker_build.sh
-./docker_run.sh ew-link-elocity-alpine 80
+./docker_run.sh ew-link-elocity-alpine 80 8080
 ```
-
-## Raspberry Pi 3+
-
-This repository is designed to produce a docker image to run on the raspberry pi 3+ platform. Needs to be built on same architecture.
