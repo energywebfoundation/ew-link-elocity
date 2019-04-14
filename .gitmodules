@@ -1,6 +1,0 @@
-[submodule "resin-sdk-python"]
-	path = resin-sdk-python
-	url = git@github.com:resin-io/resin-sdk-python.git
-[submodule "resin"]
-	path = resin
-	url = git@github.com:resin-io/resin-sdk-python.git
