@@ -15,7 +15,7 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
         self.server = None
         self.host = "0.0.0.0"
         self.port = 8000
-        self.path = '/opt/elocity'
+        self.path = '/etc/elocity'
         energyweb.Task.__init__(self, queue=queue, polling_interval=interval, eager=True, run_forever=True)
         energyweb.Logger.__init__(self, self.__class__.__name__)
 
