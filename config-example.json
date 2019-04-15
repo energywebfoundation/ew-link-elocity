@@ -8,13 +8,13 @@
     "module": "tasks.chargepoint",
     "class_name": "EVchargerEnergyMeter",
     "class_parameters": {
-     "service_urls": ["http://localhost:80"],
+     "service_urls": ["http://es-kong:80"],
       "manufacturer":"Ebee",
       "model":"EV-Charge Point Energy Meter",
-      "serial_number":"10901454d4800007340d2",
+      "serial_number":"0901454d4800007340d2",
       "energy_unit":"WATT_HOUR",
       "is_accumulated": false,
-      "connector_id": 0
+      "connector_id": 1
     }
    },
    "carbon-emission": {
@@ -31,10 +31,15 @@
     "module": "energyweb.smart_contract.origin_v1",
     "class_name": "OriginProducer",
     "class_parameters": {
-     "asset_id": 2,
-     "wallet_add": "0x4A616994A229565f7f7E96161eFd78b780bf24e2",
-     "wallet_pwd": "1b17e7cb5879a18fb6c9e7aee03a66841f2aa10102bd537752ecbdb5b6252d2f",
-     "client_url": "https://rpc.slock.it/tobalaba"
+     "asset_id": 0,
+     "wallet_add": "0x",
+     "wallet_pwd": "",
+     "client_url": "http://rpc.slock.it/tobalaba",
+     "addresses": {
+            "producer": {"address": "0x"},
+            "consumer": {"address": "0x"},
+            "asset_reg": {"address": "0x"}
+        }
     }
    }
   }
@@ -44,13 +49,6 @@
   "port": 8080
  },
  "elastic-sync": {
-  "service_urls": ["http://localhost:80"]
- },
- "iot-layer": {
-  "client_url": "https://rpc.slock.it/tobalaba",
-  "wallet_add": "0x16bC9F8a9bE6296F3D4C87Dcd866726593662B3f",
-  "wallet_pwd": "0x54f4f12baa6d986e052420e5c1e69274475e73cd450acaafb97cbc53094887cf",
-  "contract_add": "",
-  "device_id": "10901454d4800007340d2"
+  "service_urls": ["http://es-kong:80"]
  }
 }

@@ -39,7 +39,7 @@ class ElasticSearchDAO(dao.DAO):
 
     def retrieve_all(self):
         self._db.indices.refresh(self._index)
-        res = self._db.search(self._index, self._doc_type, body={"query": {"match_all": {}}})
+        res = self._db.search(self._index, body={"query": {"match_all": {}}})
         objs = []
         for hit in res['hits']['hits']:
             obj = self._cls.from_dict(hit['_source'])
@@ -58,7 +58,7 @@ class ElasticSearchDAO(dao.DAO):
     def find_by(self, attributes: [dict]) -> [dict]:
         self._db.indices.refresh(self._index)
         query = {"query": {"bool": {"must": [{"match": {k: attributes[k]}} for k in attributes]}}}
-        res = self._db.search(self._index, self._doc_type, body=query)
+        res = self._db.search(self._index, body=query)
         objs = []
         for hit in res['hits']['hits']:
             obj = self._cls.from_dict(hit['_source'])
@@ -67,10 +67,10 @@ class ElasticSearchDAO(dao.DAO):
         return objs
 
     def delete_all(self):
-        self._db.delete_by_query(self._index, doc_type=self._doc_type, body={"query": {"match_all": {}}})
+        self._db.delete_by_query(self._index, body={"query": {"match_all": {}}})
 
     def delete_all_blank(self, field: str):
-        self._db.delete_by_query(self._index, doc_type=self._doc_type, body={"bool": {"must_not": {"exists": {"field": field}}}})
+        self._db.delete_by_query(self._index, body={"bool": {"must_not": {"exists": {"field": field}}}})
 
     def query(self, query: dict) -> [dict]:
         """

@@ -30,7 +30,7 @@ class EVchargerEnergyMeter(energyweb.EnergyDevice):
         now = datetime.datetime.now().astimezone()
         if len(results) < 1:
             raise AssertionError('No new transactions.')
-        results.sort(key=lambda cs: cs.time_start, reverse=True)
+        results.sort(key=lambda cs: cs.time_start)
         tx: Ocpp16.Transaction = results.pop()
         tx.co2_saved = int(tx.meter_stop) - int(tx.meter_start)
         energy_data = {

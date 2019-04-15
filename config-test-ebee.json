@@ -8,13 +8,13 @@
     "module": "tasks.chargepoint",
     "class_name": "EVchargerEnergyMeter",
     "class_parameters": {
-     "service_urls": ["http://es-kong:80"],
+     "service_urls": ["http://localhost:80"],
       "manufacturer":"Ebee",
       "model":"EV-Charge Point Energy Meter",
-      "serial_number":"10901454d4800007340d2",
+      "serial_number":"0901454d4800007340d2",
       "energy_unit":"WATT_HOUR",
       "is_accumulated": false,
-      "connector_id": 0
+      "connector_id": 1
     }
    },
    "carbon-emission": {
@@ -41,16 +41,9 @@
  ],
  "ocpp16-server": {
   "host": "192.168.123.220",
-  "port": 8080
+  "port": 8000
  },
  "elastic-sync": {
-  "service_urls": ["http://es-kong:80"]
- },
- "iot-layer": {
-  "client_url": "https://rpc.slock.it/tobalaba",
-  "wallet_add": "0x16bC9F8a9bE6296F3D4C87Dcd866726593662B3f",
-  "wallet_pwd": "0x54f4f12baa6d986e052420e5c1e69274475e73cd450acaafb97cbc53094887cf",
-  "contract_add": "",
-  "device_id": "10901454d4800007340d2"
+  "service_urls": ["http://localhost:80"]
  }
 }

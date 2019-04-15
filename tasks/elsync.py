@@ -72,7 +72,6 @@ class ElasticSyncTask(energyweb.Task, energyweb.Logger):
             merged = merge_reconnected_stations()
             remove_unknown_stations()
             update_elastic()
-            self.console.debug('Synced memory with elastic search.')
         except elasticsearch.ElasticsearchException as e1:
             self._handle_exception(e1)
         except Exception as e2:

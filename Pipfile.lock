@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "bb276c4753c4e8479dc906c8549446b0092ecce7649d77dd0dc78655ed313eb0"
+            "sha256": "1aed2d4a523ffd1305a587133cd1c01609f2cbe0dd51cd28d45696919f010717"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -69,11 +69,11 @@
         },
         "energyweb": {
             "hashes": [
-                "sha256:00212d47cefe648c1df4f16f5c14bfaf675b908d565bb070b431c065d0e2561f",
-                "sha256:67d6b18410eb70bd2fe7ba6ec494af34795f441100665ad0fe84e6d69c8f971c"
+                "sha256:37e7371d2b9eed901b80ba6dc798dd89e7d690e9fc42c00b04ea3ad22896f2d5",
+                "sha256:c07513a60f05f5eb50472639edce09abfe470dfc44dba6dba384b8ddffe5d7aa"
             ],
             "index": "pypi",
-            "version": "==0.4.4"
+            "version": "==0.4.5"
         },
         "eth-abi": {
             "hashes": [

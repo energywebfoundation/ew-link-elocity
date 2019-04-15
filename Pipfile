@@ -6,10 +6,10 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-energyweb = "==0.4.4"
+energyweb = "==0.4.5"
 websockets = ">=6.0"
 web3 = ">=4.9.1"
-elasticsearch = "*"
+elasticsearch = ">=6"
 
 [requires]
 python_version = "3.7"

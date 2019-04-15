@@ -86,6 +86,9 @@ class Ocpp16:
     def request_meter_values(self):
         self._ask('TriggerMessage', {'requestedMessage': 'MeterValues'})
 
+    def request_cs_id(self):
+        self._ask('TriggerMessage', {'requestedMessage': 'BootNotification'})
+
     def _register_tx_start(self, conn_id: int, tag_id: str, timestamp: str, meter_start: int):
         tx_id = len(self.transactions) + 1
         time_start = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
@@ -93,9 +96,9 @@ class Ocpp16:
         return self.transactions[tx_id]
 
     def _register_tx_stop(self, tx_id: int, timestamp: str, meter_stop: int, tag_id: str, tx_data: list):
-        time_end = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+        time_stop = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
         if tx_id not in self.transactions:
-            tx = Ocpp16.Transaction(tx_id, tag_id, 0, datetime.datetime.now(), 0, time_end, int(meter_stop))
+            tx = Ocpp16.Transaction(tx_id, tag_id, 0, datetime.datetime.now(), 0, time_stop, int(meter_stop))
             samples = []
             [samples.extend([(sample, data['timestamp']) for sample in data['sampledValue']]) for data in tx_data]
             for sample, timestamp in samples:
@@ -105,7 +108,7 @@ class Ocpp16:
                     break
             self.transactions[tx_id] = tx
         else:
-            self.transactions[tx_id].time_end = time_end
+            self.transactions[tx_id].time_stop = time_stop
             self.transactions[tx_id].meter_stop = meter_stop
         return self.transactions[tx_id]
 
@@ -142,10 +145,6 @@ class Ocpp16:
 
     def follow_protocol(self, message: Request or Response):
 
-        def remove_msg(res: Ocpp16.Response):
-            del self.req_queue[res.req.msg_id]
-            del self.res_queue[res.msg_id]
-
         if isinstance(message, Ocpp16.Response):
             response = message
             if response.req.typ in ('RemoteStartTransaction', 'RemoteStopTransaction', 'TriggerMessage'):
@@ -154,7 +153,7 @@ class Ocpp16:
             elif response.req.typ == 'UnlockConnector':
                 if response.body['status'] != 'Unlocked':
                     self._handle_wrong_answer(response)
-            remove_msg(response)
+            del self.req_queue[response.req.msg_id]
             return
 
         elif isinstance(message, Ocpp16.Request):

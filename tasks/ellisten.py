@@ -48,9 +48,12 @@ class DbListenTask(energyweb.Task, energyweb.Logger):
                     payload = {'tx_id': tx.tx_id}
                 else:
                     return None
-
             elif cmd.command == 'unlock_connector':
+                # TODO: Hardcoded value
                 payload = {'connector_id': 1}
+            elif cmd.command == 'request_meter_values':
+                payload = {}
+
             else:
                 return None
             return cs_add, cmd.command, payload

@@ -38,7 +38,7 @@ class MyApp(energyweb.dispatcher.App):
             self._register_task(Ocpp16ServerTask(self.queue, MemoryDAOFactory(), interval, host, port))
 
         def register_origin():
-            interval = datetime.timedelta(minutes=6)
+            interval = datetime.timedelta(minutes=2)
             origin_config: energyweb.config.CooV1Configuration = energyweb.config.parse_coo_v1(app_config)
             for producer in origin_config.production:
                 self._register_task(CooProducerTask(producer, interval, self.queue, store='/tmp/origin/produce'))
@@ -46,7 +46,7 @@ class MyApp(energyweb.dispatcher.App):
                 self._register_task(CooConsumerTask(consumer, interval, self.queue, store='/tmp/origin/consume'))
 
         def register_db_sync():
-            interval = datetime.timedelta(minutes=1)
+            interval = datetime.timedelta(seconds=10)
             if 'elastic-sync' not in app_config \
                     or not {'service_urls'}.issubset(dict(app_config['elastic-sync']).keys()):
                 raise energyweb.config.ConfigurationFileError('Configuration file missing ElasticSync configuration.')
@@ -62,8 +62,8 @@ class MyApp(energyweb.dispatcher.App):
                 raise energyweb.config.ConfigurationFileError('Configuration file missing ElasticSync configuration.')
             self._register_task(DbListenTask(self.queue, interval, app_config['elastic-sync']['service_urls']))
 
-        config_path = '/etc/ew-link.config'
-        # config_path = './config-local.json'
+        # config_path = '/etc/elocity/ew-link.config'
+        config_path = './config-test-ebee.json'
 
         try:
             while not os.path.exists(config_path):
