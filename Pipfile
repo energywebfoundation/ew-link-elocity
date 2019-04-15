@@ -10,7 +10,6 @@ energyweb = "==0.4.4"
 websockets = ">=6.0"
 web3 = ">=4.9.1"
 elasticsearch = "*"
-sanic = "*"
 
 [requires]
 python_version = "3.7"

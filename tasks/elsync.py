@@ -74,7 +74,7 @@ class ElasticSyncTask(energyweb.Task, energyweb.Logger):
             update_elastic()
             self.console.debug('Synced memory with elastic search.')
         except elasticsearch.ElasticsearchException as e1:
-            pass
+            self._handle_exception(e1)
         except Exception as e2:
             self._handle_exception(e2)
 
