@@ -10,7 +10,7 @@ import websockets
 # IP = '192.168.123.220'
 IP = '0.0.0.0'
 # IP = 'localhost'
-PORT = 8080
+PORT = 8000
 # PORT = 80
 
 boot_notification = [2, '52325482', 'BootNotification',

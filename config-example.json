@@ -32,9 +32,9 @@
     "class_name": "OriginProducer",
     "class_parameters": {
      "asset_id": 0,
-     "wallet_add": "0x - mandatory to start with 0x,",
+     "wallet_add": "0x - mandatory and must start with 0x,",
      "wallet_pwd": "",
-     "client_url": "http://rpc.slock.it/tobalaba",
+     "client_url": "http://rpc.slock.it/tobalaba - mandatory must be a synced blockchain client url",
      "addresses": {
             "producer": {"address": "0x"},
             "consumer": {"address": "0x"},
@@ -46,7 +46,7 @@
  ],
  "ocpp16-server": {
   "host": "0.0.0.0",
-  "port": 8080
+  "port": 8000
  },
  "elastic-sync": {
   "service_urls": ["http://es-kong:80"]

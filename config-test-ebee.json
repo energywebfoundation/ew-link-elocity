@@ -8,7 +8,7 @@
     "module": "tasks.chargepoint",
     "class_name": "EVchargerEnergyMeter",
     "class_parameters": {
-     "service_urls": ["http://localhost:80"],
+     "service_urls": ["http://es-kong:80"],
       "manufacturer":"Ebee",
       "model":"EV-Charge Point Energy Meter",
       "serial_number":"0901454d4800007340d2",
@@ -34,7 +34,7 @@
      "asset_id": 2,
      "wallet_add": "0x4A616994A229565f7f7E96161eFd78b780bf24e2",
      "wallet_pwd": "1b17e7cb5879a18fb6c9e7aee03a66841f2aa10102bd537752ecbdb5b6252d2f",
-     "client_url": "https://rpc.slock.it/tobalaba"
+     "client_url": "http://rpc.slock.it/tobalaba"
     }
    }
   }
@@ -44,6 +44,6 @@
   "port": 8000
  },
  "elastic-sync": {
-  "service_urls": ["http://localhost:80"]
+  "service_urls": ["http://es-kong:80"]
  }
 }

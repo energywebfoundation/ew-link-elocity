@@ -5,15 +5,12 @@ services:
     volumes:
       - /opt/slockit/configs:/etc/elocity
     ports:
-      - "8000:8080/tcp"
-      - "8000:8080/udp"
+      - "8000:8000"
     extra_hosts:
-      - "es-kong:0.0.0.0"
+      - "es-kong:10.10.1.225"
   ew-link-config:
     image: slockit/ew-link-config-api:v1-x64
     volumes:
       - /opt/slockit/configs:/etc/elocity
     ports:
       - "8060:9069"
-    extra_hosts:
-     - "es-kong:0.0.0.0"
