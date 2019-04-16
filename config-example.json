@@ -3,15 +3,15 @@
  ],
  "producers": [
   {
-   "name": "ChargingPoint0901454d4800007340d2",
+   "name": "ChargingPoint+_serial_number",
    "energy-meter": {
     "module": "tasks.chargepoint",
     "class_name": "EVchargerEnergyMeter",
     "class_parameters": {
      "service_urls": ["http://es-kong:80"],
-      "manufacturer":"Ebee",
-      "model":"EV-Charge Point Energy Meter",
-      "serial_number":"0901454d4800007340d2",
+      "manufacturer":"charging_point_manufacturer - optional",
+      "model":"charging_point_model - optional",
+      "serial_number":"cs_energy_meter_serial_number - mandatory",
       "energy_unit":"WATT_HOUR",
       "is_accumulated": false,
       "connector_id": 1
@@ -32,7 +32,7 @@
     "class_name": "OriginProducer",
     "class_parameters": {
      "asset_id": 0,
-     "wallet_add": "0x",
+     "wallet_add": "0x - mandatory to start with 0x,",
      "wallet_pwd": "",
      "client_url": "http://rpc.slock.it/tobalaba",
      "addresses": {

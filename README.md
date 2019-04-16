@@ -3,13 +3,15 @@
 EWF Link App to integrate EV-Charging stations with OCPP-J v1.6 protocol with the Certificates of Origin DApp. Allowing owners to trade green energy tokens on the blockchain.
 
 ## Run test from docker compose
-1. Spin the containers:
+1. Be sure you followed instructions on the [main repo](https://github.com/energywebfoundation/elocity-setup-docs) to setup front-end and elasticsearch, plus configure your EV-Charging station controller to connect to the service IP, in this case, the one running this docker-compose.
+
+2. Spin the containers:
 `docker-compose up`
 
-2. Configure the EV-charging station to connect to your machine IP and port. On the **EBee's Bender Controller** the USB host always assign the connected to IP `192.168.123.220`. 
+3. Configure the EV-charging station to connect to your machine IP and port. On the **EBee's Bender Controller** the USB host always assign the connected to IP `192.168.123.220`. 
 `ws://192.168.123.220:8000/your_charging_station_id`
 
-3. Configure elocity app with test configuration:
+4. Configure elocity app with test configuration:
 ```bash
 curl --request POST \
   --url http://localhost:8060/config \
@@ -56,7 +58,7 @@ curl --request POST \
   }
  ],
  "ocpp16-server": {
-  "host": "192.168.123.220",
+  "host": "0.0.0.0",
   "port": 8000
  },
  "elastic-sync": {
@@ -64,6 +66,8 @@ curl --request POST \
  }
 }'
 ```
+
+5. The following message will appear on the logs `Server running on http://0.0.0.0:8000`. Check on the logs or in the frontend for connected charging stations.
 
 ## Run stable version from docker hub
 

@@ -8,7 +8,7 @@ services:
       - "8000:8080/tcp"
       - "8000:8080/udp"
     extra_hosts:
-      - "es-kong:10.10.1.167"
+      - "es-kong:0.0.0.0"
   ew-link-config:
     image: slockit/ew-link-config-api:v1-x64
     volumes:
@@ -16,4 +16,4 @@ services:
     ports:
       - "8060:9069"
     extra_hosts:
-     - "es-kong:10.10.1.167"
+     - "es-kong:0.0.0.0"

@@ -40,7 +40,7 @@
   }
  ],
  "ocpp16-server": {
-  "host": "192.168.123.220",
+  "host": "0.0.0.0",
   "port": 8000
  },
  "elastic-sync": {

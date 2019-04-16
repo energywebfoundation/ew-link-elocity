@@ -62,8 +62,7 @@ class MyApp(energyweb.dispatcher.App):
                 raise energyweb.config.ConfigurationFileError('Configuration file missing ElasticSync configuration.')
             self._register_task(DbListenTask(self.queue, interval, app_config['elastic-sync']['service_urls']))
 
-        # config_path = '/etc/elocity/ew-link.config'
-        config_path = './config-test-ebee.json'
+        config_path = '/etc/elocity/ew-link.config'
 
         try:
             while not os.path.exists(config_path):
