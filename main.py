@@ -7,20 +7,22 @@ from sanic.response import json as response
 
 host = "0.0.0.0"
 port = 9069
-path = '/etc/elocity'
+path = os.path.join('/etc', 'elocity', 'ew-link.config')
 
 
 app = Sanic('ConfigApi')
+
+
+def _fail_response(e):
+    return response({'message': f'file not saved because {e.with_traceback(e.__traceback__)}'}, status=500)
 
 
 @app.post("/config")
 async def post_config(request: Request):
     try:
         global path
-        file_name = 'ew-link.config'
-        if not os.path.exists(path):
-            os.makedirs(path)
-        path = os.path.join(path, file_name)
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
         with open(path, 'w+') as file:
             json.dump(request.json, file)
         return response({'message': 'file successfully saved. restart device to apply changes.',
@@ -30,8 +32,15 @@ async def post_config(request: Request):
                         status=500)
 
 
-def _handle_exception(e: Exception):
-    print(f'ConfigApi failed because {e.with_traceback(e.__traceback__)}')
+@app.delete("/config")
+async def del_config(request: Request):
+    try:
+        if not os.path.exists(path):
+            return _fail_response(FileNotFoundError('App not configured.'))
+        os.remove(path)
+        return response({'message': 'configuration deleted, post new.', 'path': f'{path}'})
+    except Exception as e:
+        return _fail_response(e)
 
 
 if __name__ == "__main__":
