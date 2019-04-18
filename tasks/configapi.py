@@ -15,7 +15,7 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
         self.server = None
         self.host = "0.0.0.0"
         self.port = 8000
-        self.path = '/etc/elocity'
+        self.path = os.path.join('/etc/elocity', 'ew-link.config')
         energyweb.Task.__init__(self, queue=queue, polling_interval=interval, eager=True, run_forever=True)
         energyweb.Logger.__init__(self, self.__class__.__name__)
 
@@ -29,14 +29,12 @@ class ConfigApi(energyweb.Task, energyweb.Logger):
         @app.post("/config")
         async def post_config(request: Request):
             try:
-                file_name = 'ew-link.config'
                 if not os.path.exists(self.path):
                     os.makedirs(self.path)
-                path = os.path.join(self.path, file_name)
-                with open(path, 'w+') as file:
+                with open(self.path, 'w+') as file:
                     json.dump(request.json, file)
                 return response({'message': 'file successfully saved. restart device to apply changes.',
-                                 'path': f'{path}'})
+                                 'path': f'{self.path}'})
             except Exception as e:
                 return response({'message': f'file not saved because {e.with_traceback(e.__traceback__)}'},
                                 status=500)

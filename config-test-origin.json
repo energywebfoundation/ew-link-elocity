@@ -1,0 +1,74 @@
+{
+    "topAdminPrivateKey": "10d1b888946c8b38e3fe26f068d64ddb639360e8c640cd7a78cdf440f1338816",
+    "matcherPrivateKey": "b17ad6dcd8b91bab86b294c162aa831fec05745c688f39165f5e6c7a9623421f",
+    "flow": [
+        {
+            "type": "CREATE_ACCOUNT",
+            "data": {
+                "firstName": "TestFirst",
+                "surname": "TestLast",
+                "organization": "TestOrg",
+                "street": "TestStreet",
+                "number": "TestNumber",
+                "zip": "TestZip",
+                "city": "TestCity",
+                "country": "TestCountry",
+                "state": "TestState",
+                "address": "0x8e76A33333E5EB63a5B6f633ED5c840B819824F7",
+                "privateKey": "0xc1743e0a69f8a8a17273f0713a221e0263214876a45d55dbd8bbee7224973145",
+                "rights": 16
+            }
+        },
+        {
+            "type": "CREATE_PRODUCING_ASSET",
+            "data": {
+                "smartMeter": "0xb1F38061611Ce9A76973fad5431fc8e05136912F",
+                "smartMeterPK": "0xf4ed02ad95c0a482b01e39da864020db49e125b4cacf830a153bd16d3c450027",
+                "owner": "0x8e76A33333E5EB63a5B6f633ED5c840B819824F7",
+                "operationalSince": 0,
+                "capacityWh": 0,
+                "lastSmartMeterReadWh": 0,
+                "active": true,
+                "lastSmartMeterReadFileHash": "",
+                "country": "TestCountry",
+                "region": "TestRegion",
+                "zip": "TestZip",
+                "city": "TestCity",
+                "street": "TestStreet",
+                "houseNumber": "TestNumber",
+                "gpsLatitude": "0",
+                "gpsLongitude": "0",
+                "assetType": "RunRiverHydro",
+                "certificatesCreatedForWh": 0,
+                "lastSmartMeterCO2OffsetRead": 0,
+                "cO2UsedForCertificate": 0,
+                "complianceRegistry": "TestComp",
+                "otherGreenAttributes": "TestOther",
+                "typeOfPublicSupport": "TestSupp"
+            }
+        },
+        {
+            "type": "CREATE_CONSUMING_ASSET",
+            "data": {
+                "smartMeter": "0xCF1C97cb631417D539849A240fbCC74d65a4F1a7",
+                "smartMeterPK": "0x4300e06065c61437e520a8d7772380021de0cb6f3328f37597c20e8ba3d51446",
+                "owner": "0x8e76A33333E5EB63a5B6f633ED5c840B819824F7",
+                "operationalSince": 0,
+                "capacityWh": 0,
+                "lastSmartMeterReadWh": 0,
+                "active": true,
+                "lastSmartMeterReadFileHash": "",
+                "country": "TestCountry",
+                "region": "TestRegion",
+                "zip": "TestZip",
+                "city": "TestCity",
+                "street": "TestStreet",
+                "houseNumber": "TestNumber",
+                "gpsLatitude": "0",
+                "gpsLongitude": "0",
+                "maxCapacitySet": false,
+                "certificatesUsedForWh": 0
+            }
+        }
+    ]
+}
