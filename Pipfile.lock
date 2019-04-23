@@ -129,10 +129,10 @@
         },
         "eth-utils": {
             "hashes": [
-                "sha256:76f7797d3ed67821dbc92931f5b7e6b4bccdd5d3407b316bd1df882f2b55c28f",
-                "sha256:f11f046fef99e63f2cfe7663531c9a13ed0be6c01879f1a6151dc104eeebdfcf"
+                "sha256:518a87e29ada2d3840da4f9e61b762b317b08c517cf82e8fddb8e73c553de540",
+                "sha256:ed3637d9de4270e9bb74b790405b57be223c9913003ea225f23e5e16b66ff945"
             ],
-            "version": "==1.4.1"
+            "version": "==1.5.1"
         },
         "hexbytes": {
             "hashes": [
@@ -222,10 +222,10 @@
         },
         "urllib3": {
             "hashes": [
-                "sha256:61bf29cada3fc2fbefad4fdf059ea4bd1b4a86d2b6d15e1c7c0b582b9752fe39",
-                "sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22"
+                "sha256:4c291ca23bbb55c76518905869ef34bdd5f0e46af7afe6861e8375643ffee1a0",
+                "sha256:9a247273df709c4fedb38c711e44292304f73f39ab01beda9f6b9fc375669ac3"
             ],
-            "version": "==1.24.1"
+            "version": "==1.24.2"
         },
         "web3": {
             "hashes": [
