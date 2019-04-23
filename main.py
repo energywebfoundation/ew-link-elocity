@@ -47,5 +47,10 @@ async def del_config(request: Request):
         return _fail_response(e)
 
 
+@app.options("/config")
+async def ops_config(request: Request):
+    return response({}, headers=cors_headers)
+
+
 if __name__ == "__main__":
     app.run(host=host, port=port, access_log=True)
