@@ -13,8 +13,8 @@ path = os.path.join('/etc', 'elocity', 'ew-link.config')
 app = Sanic('ConfigApi')
 
 cors_headers = {"Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE"}
+                "Access-Control-Allow-Headers": "Origin,X-Requested-With,Content-Type,Accept",
+                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE"}
 
 
 def _fail_response(e):
