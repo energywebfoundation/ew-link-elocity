@@ -14,7 +14,8 @@ app = Sanic('ConfigApi')
 
 cors_headers = {"Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Origin,X-Requested-With,Content-Type,Accept",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE"}
+                "Access-Control-Allow-Methods": "GET,POST,DELETE",
+                "Allow": "GET,POST,DELETE"}
 
 
 def _fail_response(e):
@@ -49,7 +50,7 @@ async def del_config(request: Request):
 
 @app.options("/config")
 async def ops_config(request: Request):
-    return response({}, headers=cors_headers)
+    return response({"GET,POST,DELETE"}, headers=cors_headers)
 
 
 if __name__ == "__main__":
