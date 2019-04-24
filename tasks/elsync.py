@@ -56,7 +56,7 @@ class ElasticSyncTask(energyweb.Task, energyweb.Logger):
                     tag.last_used_in = cs.reg_id
                     els_tg_dao.update(tag)
                 cs.tags = {}
-                for tx in cs.transactions.values():
+                for tx in [tx for tx in cs.transactions.values() if not tx.reg_id]:
                     if tx.meter_start and tx.meter_stop:
                         tx.reg_id = uuid.uuid4()
                         tx.cs_reg_id = cs.reg_id
