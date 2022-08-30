@@ -8,7 +8,7 @@ cytoolz==0.9.0.1 ; implementation_name == 'cpython'
 elasticsearch==7.0.0
 energyweb==0.4.5
 eth-abi==1.3.0
-eth-account==0.3.0
+eth-account==0.5.9
 eth-hash[pycryptodome]==0.2.0
 eth-keyfile==0.5.1
 eth-keys==0.2.1
